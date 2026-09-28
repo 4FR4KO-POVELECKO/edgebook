@@ -23,6 +23,7 @@ export const ru: Dict = {
     newTrade: 'Сделка',
     hotkey: 'или клавиша N',
     search: 'Поиск',
+    groups: { journal: 'Журнал', insights: 'Выводы' },
   },
 
   palette: {

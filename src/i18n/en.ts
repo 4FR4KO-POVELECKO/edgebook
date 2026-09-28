@@ -14,6 +14,7 @@ export const en = {
     newTrade: 'Trade',
     hotkey: 'or press N',
     search: 'Search',
+    groups: { journal: 'Journal', insights: 'Insights' },
   },
 
   palette: {

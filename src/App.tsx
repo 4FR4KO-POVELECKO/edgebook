@@ -6,7 +6,7 @@ import { Icon } from './components/Icon'
 import { Logo } from './components/Logo'
 import { TradeModalHost, useTradeModal } from './components/TradeTable'
 import { useResolvedTheme } from './lib/theme'
-import { NAV } from './nav'
+import { NAV, NAV_GROUPS } from './nav'
 import Analytics from './pages/Analytics'
 import CalendarPage from './pages/Calendar'
 import Dashboard from './pages/Dashboard'
@@ -42,6 +42,37 @@ function useHydrated() {
   const [ok, setOk] = useState(useStore.persist.hasHydrated())
   useEffect(() => useStore.persist.onFinishHydration(() => setOk(true)), [])
   return ok
+}
+
+/** A trade page belongs to the Trades section. */
+function useSectionActive() {
+  const { pathname } = useLocation()
+  return (to: string, isActive: boolean) => isActive || (to === '/trades' && pathname.startsWith('/trade/'))
+}
+
+function SideLink({ item }: { item: (typeof NAV)[number] }) {
+  const t = useT()
+  const active = useSectionActive()
+  return (
+    <NavLink to={item.to} end className={({ isActive }) => `nav-link ${active(item.to, isActive) ? 'active' : ''}`}>
+      <Icon icon={item.icon} />{t.nav[item.key]}
+    </NavLink>
+  )
+}
+
+function TabBar() {
+  const t = useT()
+  const active = useSectionActive()
+  return (
+    <nav className="tabbar">
+      {NAV.map((n) => (
+        <NavLink key={n.to} to={n.to} end className={({ isActive }) => `tab-link ${active(n.to, isActive) ? 'active' : ''}`}>
+          <span className="tab-icon"><Icon icon={n.icon} size={20} /></span>
+          <span className="tab-label">{t.nav[n.key]}</span>
+        </NavLink>
+      ))}
+    </nav>
+  )
 }
 
 function ThemeButton() {
@@ -108,15 +139,18 @@ export default function App() {
             <span>{t.nav.search}</span>
             <kbd>{isMac ? '⌘' : 'Ctrl'} K</kbd>
           </button>
-          {NAV.map((n) => (
-            <NavLink key={n.to} to={n.to} end className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-              <Icon icon={n.icon} />{t.nav[n.key]}
-            </NavLink>
+          {NAV_GROUPS.map((g) => (
+            <div key={g} className="nav-section">
+              <div className="nav-group">{t.nav.groups[g]}</div>
+              {NAV.filter((n) => n.group === g).map((n) => <SideLink key={n.to} item={n} />)}
+            </div>
           ))}
           <div className="sidebar-foot">
             <button className="primary" style={{ width: '100%', justifyContent: 'center' }} onClick={() => show()}><Icon icon={Add01Icon} />{t.nav.newTrade}</button>
             <div className="hint" style={{ textAlign: 'center', marginTop: 6 }}>{t.nav.hotkey}</div>
-            <div className="row" style={{ marginTop: 14, gap: 6, flexWrap: 'nowrap' }}>
+            <div className="sidebar-sep" />
+            {NAV.filter((n) => n.group === 'footer').map((n) => <SideLink key={n.to} item={n} />)}
+            <div className="row" style={{ marginTop: 10, gap: 6, flexWrap: 'nowrap' }}>
               <div className="seg lang-switch">
                 {LANGS.map((l) => (
                   <button key={l.value} className={lang === l.value ? 'on' : ''} onClick={() => setSettings({ lang: l.value })}>{l.label}</button>
@@ -131,14 +165,7 @@ export default function App() {
           <Pages />
         </main>
 
-        <nav className="tabbar">
-          {NAV.map((n) => (
-            <NavLink key={n.to} to={n.to} end className={({ isActive }) => `tab-link ${isActive ? 'active' : ''}`}>
-              <Icon icon={n.icon} size={20} />
-              <span>{t.nav[n.key]}</span>
-            </NavLink>
-          ))}
-        </nav>
+        <TabBar />
       </div>
       <TradeModalHost />
       <CommandPalette />
