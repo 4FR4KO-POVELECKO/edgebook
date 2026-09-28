@@ -32,9 +32,39 @@ export function plannedRR(t: Trade): number | undefined {
   return risk > 0 ? Math.abs(t.takeProfit - t.entryPrice) / risk : undefined
 }
 
+/** Position value at entry. */
+export const notional = (t: Trade) => t.entryPrice * t.quantity * (t.multiplier || 1)
+
+export const leverageOf = (t: Trade) => (t.leverage && t.leverage > 1 ? t.leverage : 1)
+
+/** Return on the position's notional value (unaffected by leverage). */
 export function returnPct(t: Trade): number {
-  const notional = t.entryPrice * t.quantity * (t.multiplier || 1)
-  return notional ? (netPnl(t) / notional) * 100 : 0
+  const n = notional(t)
+  return n ? (netPnl(t) / n) * 100 : 0
+}
+
+/** Own capital the position ties up. */
+export const marginUsed = (t: Trade) => notional(t) / leverageOf(t)
+
+/** Return on margin (ROE): the return on your own money, amplified by leverage. */
+export function roePct(t: Trade): number {
+  const m = marginUsed(t)
+  return m ? (netPnl(t) / m) * 100 : 0
+}
+
+/** Approximate liquidation price for isolated margin, ignoring maintenance margin and fees
+ * (exchanges liquidate somewhat earlier). Undefined without leverage. */
+export function liquidationPrice(t: Trade): number | undefined {
+  const lev = leverageOf(t)
+  if (lev <= 1 || !t.entryPrice) return undefined
+  return t.direction === 'long' ? t.entryPrice * (1 - 1 / lev) : t.entryPrice * (1 + 1 / lev)
+}
+
+/** True when the stop sits at or beyond the liquidation price, so liquidation would hit first. */
+export function stopBeyondLiquidation(t: Trade): boolean {
+  const liq = liquidationPrice(t)
+  if (liq == null || !t.stopLoss) return false
+  return t.direction === 'long' ? t.stopLoss <= liq : t.stopLoss >= liq
 }
 
 export function holdMinutes(t: Trade): number | undefined {

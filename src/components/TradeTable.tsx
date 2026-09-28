@@ -65,6 +65,7 @@ export function TradeTable({ trades, compact, sortable = true }: { trades: Trade
                 <span className="row" style={{ gap: 6, flexWrap: 'nowrap' }}>
                   <b>{tr.symbol}</b>
                   <span className={`badge ${tr.direction}`}>{tr.direction === 'long' ? 'L' : 'S'}</span>
+                  {(tr.leverage ?? 1) > 1 && <span className="badge lev">{tr.leverage}×</span>}
                   {tr.status === 'open' && <span className="badge open">OPEN</span>}
                 </span>
                 <span className="hint">
@@ -116,6 +117,7 @@ export function TradeTable({ trades, compact, sortable = true }: { trades: Trade
                 <td><b>{tr.symbol}</b></td>
                 <td>
                   <span className={`badge ${tr.direction}`}><Icon icon={tr.direction === 'long' ? ArrowUpRight01Icon : ArrowDownRight01Icon} size={12} strokeWidth={2.2} />{tr.direction === 'long' ? 'LONG' : 'SHORT'}</span>{' '}
+                  {(tr.leverage ?? 1) > 1 && <span className="badge lev">{tr.leverage}×</span>}{' '}
                   {tr.status === 'open' && <span className="badge open">OPEN</span>}
                 </td>
                 {!compact && (

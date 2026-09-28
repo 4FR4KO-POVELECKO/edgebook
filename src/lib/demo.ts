@@ -70,6 +70,8 @@ export function makeDemo(): { strategies: Strategy[]; trades: Trade[]; dayNotes:
         id: uid(), symbol, market: s.market, direction, status: 'closed',
         entryDate: localDateTime(ed), exitDate: localDateTime(xd),
         entryPrice: entry, exitPrice: exit, quantity: qty, multiplier: 1,
+        // deterministic, so adding leverage doesn't shift the seeded demo numbers
+        leverage: s.market === 'crypto' ? [3, 5, 10, 20][trades.length % 4] : undefined,
         fees: +(1 + r() * 3).toFixed(2), stopLoss: stop, takeProfit: tp,
         strategyId: s.id, checklist,
         tags: r() < 0.6 ? [pick(tagsPool)] : [],
@@ -93,7 +95,7 @@ export function makeDemo(): { strategies: Strategy[]; trades: Trade[]; dayNotes:
   trades.push({
     id: uid(), symbol: 'ETHUSDT', market: 'crypto', direction: 'long', status: 'open',
     entryDate: localDateTime(new Date(today.getTime() - 86400000)), entryPrice: 2950, quantity: 0.5,
-    multiplier: 1, fees: 1.2, stopLoss: 2860, takeProfit: 3200, strategyId: strategies[2].id,
+    multiplier: 1, leverage: 5, fees: 1.2, stopLoss: 2860, takeProfit: 3200, strategyId: strategies[2].id,
     checklist: {}, tags: [t.tags[5]], mistakes: [], emotion: 'confident', notes: '', screenshots: [], createdAt: now,
   })
   return { strategies, trades, dayNotes }

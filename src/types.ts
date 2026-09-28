@@ -15,6 +15,8 @@ export interface Trade {
   quantity: number
   /** contract multiplier (futures/options), 1 for spot */
   multiplier: number
+  /** margin leverage, e.g. 10 for 10x; missing or 1 means no leverage */
+  leverage?: number
   fees: number
   stopLoss?: number
   takeProfit?: number

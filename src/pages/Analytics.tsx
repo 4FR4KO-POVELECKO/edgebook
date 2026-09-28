@@ -4,7 +4,7 @@ import { DrawdownChart, EquityChart, PnlBars } from '../components/charts'
 import { Icon } from '../components/Icon'
 import { Empty, Seg } from '../components/ui'
 import {
-  computeStats, equityCurve, groupBy, holdMinutes, isClosed, netPnl, rMultiple, round2, sortByExit, sum, tradeDay, type Stats,
+  computeStats, equityCurve, groupBy, holdMinutes, isClosed, leverageOf, netPnl, rMultiple, round2, sortByExit, sum, tradeDay, type Stats,
 } from '../lib/calc'
 import { duration, num, pct, pnlClass, rFmt, useMoney, ymd } from '../lib/format'
 import { label, useT, type Dict } from '../i18n'
@@ -12,6 +12,12 @@ import { useStore } from '../store'
 import type { Trade } from '../types'
 
 type Period = 'all' | '30' | '90' | 'ytd'
+
+const LEV_BUCKETS = ['1×', '2–5×', '6–10×', '11–25×', '> 25×']
+const levBucket = (x: Trade) => {
+  const l = leverageOf(x)
+  return LEV_BUCKETS[l <= 1 ? 0 : l <= 5 ? 1 : l <= 10 ? 2 : l <= 25 ? 3 : 4]
+}
 
 export default function Analytics() {
   const { trades, strategies, settings } = useStore()
@@ -161,6 +167,14 @@ export default function Analytics() {
           <div className="card">
             <div className="card-head"><h2>{t.analytics.bySymbol}</h2></div>
             <Breakdown rows={[...groupBy(filtered, (t) => t.symbol)].map(([k, ts]) => ({ key: k, label: <b>{k}</b>, trades: ts }))} limit={12} />
+            {filtered.some((x) => leverageOf(x) > 1) && (
+              <>
+                <div className="section-title">{t.analytics.byLeverage}</div>
+                <Breakdown sort={false} rows={[...groupBy(filtered, levBucket)]
+                  .sort(([a], [b]) => LEV_BUCKETS.indexOf(a) - LEV_BUCKETS.indexOf(b))
+                  .map(([k, ts]) => ({ key: k, label: k === '1×' ? t.analytics.noLeverage : k, trades: ts }))} />
+              </>
+            )}
           </div>
           <div className="card">
             <div className="card-head"><h2>{t.analytics.byTag}</h2></div>

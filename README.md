@@ -42,7 +42,7 @@ No accounts, no servers, no subscriptions. Your journal lives in your browser.
 ## Features
 
 ### Trade log
-Long and short, open and closed positions, stops and targets, fees and contract multipliers. P&L, R-multiple, planned R:R and return are calculated as you type. A built-in position size calculator suggests quantity from your risk per trade. Tag trades, mark mistakes, record emotions and execution quality, attach chart screenshots (paste straight from the clipboard). Press <kbd>N</kbd> anywhere to log a trade.
+Long and short, open and closed positions, stops and targets, fees, contract multipliers and leverage. P&L, R-multiple, planned R:R, return and return on margin are calculated as you type, along with the margin used and an approximate liquidation price — with a warning if your stop sits beyond it. A built-in position size calculator suggests quantity from your risk per trade. Tag trades, mark mistakes, record emotions and execution quality, attach chart screenshots (paste straight from the clipboard). Press <kbd>N</kbd> anywhere to log a trade.
 
 <p align="center"><img src="docs/screenshots/trade-form.png" alt="Trade form" width="820"></p>
 
@@ -112,11 +112,12 @@ Every push to `main` is deployed to GitHub Pages by [`.github/workflows/deploy.y
 The first row is a header. Required columns: `symbol`, `entryDate`, `entryPrice`, `quantity`. Comma or semicolon delimiters both work.
 
 ```csv
-symbol,market,direction,status,entryDate,exitDate,entryPrice,exitPrice,quantity,multiplier,fees,stopLoss,takeProfit,strategy,tags,mistakes,emotion,rating,notes
-AAPL,stocks,long,closed,2026-09-01 10:15,2026-09-01 11:40,190.5,193.2,100,1,2,189,195,Level breakout,morning|A+ setup,,calm,4,Clean entry
+symbol,market,direction,status,entryDate,exitDate,entryPrice,exitPrice,quantity,multiplier,leverage,fees,stopLoss,takeProfit,strategy,tags,mistakes,emotion,rating,notes
+AAPL,stocks,long,closed,2026-09-01 10:15,2026-09-01 11:40,190.5,193.2,100,1,1,2,189,195,Level breakout,morning|A+ setup,,calm,4,Clean entry
 ```
 
 - `direction`: `long` / `short`
+- `leverage`: e.g. `10` for 10×; leave empty or `1` for no leverage
 - `market`: `stocks`, `crypto`, `futures`, `forex`, `options`, `other`
 - `tags` and `mistakes`: separated with `|`
 - Unknown strategies are created automatically

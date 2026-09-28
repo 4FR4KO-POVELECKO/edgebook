@@ -1,8 +1,8 @@
 import { useMemo, useState, type ClipboardEvent, type KeyboardEvent } from 'react'
 import { Add01Icon, ArrowDownRight01Icon, ArrowUpRight01Icon, Cancel01Icon, Delete02Icon } from '@hugeicons/core-free-icons'
-import { isClosed, netPnl, plannedRR, returnPct, riskAmount, rMultiple, sum } from '../lib/calc'
+import { isClosed, leverageOf, liquidationPrice, marginUsed, netPnl, plannedRR, returnPct, riskAmount, rMultiple, roePct, stopBeyondLiquidation, sum } from '../lib/calc'
 import { label, useT } from '../i18n'
-import { localDateTime, num, pnlClass, rFmt, useMoney } from '../lib/format'
+import { localDateTime, num, pnlClass, price, rFmt, useMoney } from '../lib/format'
 import { compressImage } from '../lib/io'
 import { useStore } from '../store'
 import { DEFAULT_MISTAKES, EMOTIONS, MARKETS, type Direction, type Trade } from '../types'
@@ -20,6 +20,7 @@ export type TradeDraft = {
   exitPrice: string
   quantity: string
   multiplier: string
+  leverage: string
   fees: string
   stopLoss: string
   takeProfit: string
@@ -44,7 +45,7 @@ function toDraft(t?: Trade, defaults?: Partial<TradeDraft>): TradeDraft {
     return {
       symbol: '', market: 'stocks', direction: 'long', status: 'closed',
       entryDate: localDateTime(), exitDate: localDateTime(),
-      entryPrice: '', exitPrice: '', quantity: '', multiplier: '1', fees: '0',
+      entryPrice: '', exitPrice: '', quantity: '', multiplier: '1', leverage: '1', fees: '0',
       stopLoss: '', takeProfit: '', strategyId: '', checklist: {}, tags: [], mistakes: [],
       emotion: '', notes: '', screenshots: [], ...defaults,
     }
@@ -53,7 +54,7 @@ function toDraft(t?: Trade, defaults?: Partial<TradeDraft>): TradeDraft {
     symbol: t.symbol, market: t.market, direction: t.direction, status: t.status,
     entryDate: t.entryDate, exitDate: t.exitDate ?? localDateTime(),
     entryPrice: s(t.entryPrice), exitPrice: s(t.exitPrice), quantity: s(t.quantity),
-    multiplier: s(t.multiplier), fees: s(t.fees), stopLoss: s(t.stopLoss), takeProfit: s(t.takeProfit),
+    multiplier: s(t.multiplier), leverage: s(t.leverage ?? 1), fees: s(t.fees), stopLoss: s(t.stopLoss), takeProfit: s(t.takeProfit),
     strategyId: t.strategyId ?? '', checklist: t.checklist ?? {}, tags: t.tags, mistakes: t.mistakes,
     emotion: t.emotion ?? '', rating: t.rating, notes: t.notes, screenshots: t.screenshots,
   }
@@ -72,6 +73,7 @@ function fromDraft(d: TradeDraft): Omit<Trade, 'id' | 'createdAt'> {
     exitPrice: closed ? n(d.exitPrice) : undefined,
     quantity: n(d.quantity) ?? 0,
     multiplier: n(d.multiplier) || 1,
+    leverage: (n(d.leverage) ?? 1) > 1 ? n(d.leverage) : undefined,
     fees: n(d.fees) ?? 0,
     stopLoss: n(d.stopLoss),
     takeProfit: n(d.takeProfit),
@@ -110,6 +112,9 @@ export function TradeForm({ trade, defaults, onClose }: { trade?: Trade; default
   const r = closedPreview ? rMultiple(preview) : undefined
   const risk = riskAmount(preview)
   const rr = plannedRR(preview)
+  const leveraged = leverageOf(preview) > 1
+  const liq = liquidationPrice(preview)
+  const liqDanger = stopBeyondLiquidation(preview)
 
   // position sizing: balance * risk% / (|entry - stop| * multiplier)
   const balance = settings.startingBalance + sum(trades.filter((x) => x.id !== trade?.id).map(netPnl))
@@ -149,7 +154,13 @@ export function TradeForm({ trade, defaults, onClose }: { trade?: Trade; default
         <div><div className="label">{t.form.netPnl}</div><div className={`value ${pnlClass(net)}`}>{closedPreview ? money(net, { sign: true }) : '—'}</div></div>
         <div><div className="label">{t.form.rMultiple}</div><div className={`value ${pnlClass(r ?? 0)}`}>{rFmt(r)}</div></div>
         <div><div className="label">{t.form.riskToStop}</div><div className="value">{risk ? money(risk) : '—'}</div></div>
-        <div><div className="label">{t.form.plannedRR}</div><div className="value">{rr ? `1:${num(rr, 1)}` : '—'} <span className={`small ${pnlClass(net)}`}>{closedPreview ? `${num(returnPct(preview), 2)}%` : ''}</span></div></div>
+        <div>
+          <div className="label">{leveraged ? t.form.plannedRoe : t.form.plannedRR}</div>
+          <div className="value">
+            {rr ? `1:${num(rr, 1)}` : '—'}{' '}
+            <span className={`small ${pnlClass(net)}`}>{closedPreview ? `${num(leveraged ? roePct(preview) : returnPct(preview), leveraged ? 1 : 2)}%` : ''}</span>
+          </div>
+        </div>
       </div>
       <div className="drawer-actions">
         <div className="row">
@@ -220,6 +231,27 @@ export function TradeForm({ trade, defaults, onClose }: { trade?: Trade; default
               </div>
               <label className="field half"><span>{t.form.fees}</span><input inputMode="decimal" value={d.fees} onChange={(e) => set('fees', e.target.value)} /></label>
               <label className="field half"><span>{t.form.multiplier}</span><input inputMode="decimal" value={d.multiplier} onChange={(e) => set('multiplier', e.target.value)} /></label>
+              <label className="field half">
+                <span>{t.form.leverage}</span>
+                <div className="input-suffix">
+                  <input inputMode="decimal" value={d.leverage} onChange={(e) => set('leverage', e.target.value)} />
+                  <span>×</span>
+                </div>
+                <div className="chips lev-presets">
+                  {[1, 2, 5, 10, 20, 50].map((v) => (
+                    <span key={v} className={`chip ${Number(d.leverage.replace(',', '.')) === v ? 'on' : ''}`} onClick={() => set('leverage', String(v))}>{v}×</span>
+                  ))}
+                </div>
+              </label>
+              <div className="field half lev-info">
+                {leveraged && preview.entryPrice > 0 && preview.quantity > 0 && (
+                  <>
+                    <div><span className="hint">{t.form.margin}</span> <b className="num">{money(marginUsed(preview))}</b></div>
+                    {liq != null && <div title={t.form.liqNote}><span className="hint">{t.form.liquidation}</span> <b className="num neg">{price(+liq.toPrecision(6))}</b></div>}
+                  </>
+                )}
+              </div>
+              {liqDanger && <div className="field full"><div className="warn-box">{t.form.stopBeyondLiq}</div></div>}
             </div>
           </>
         ) : (

@@ -138,12 +138,12 @@ h3 { font-size: 14px; }
 .hero-strip { display: flex; gap: 28px; flex-wrap: wrap; margin: 16px 0 20px; }
 .hero-strip .k { font-size: 12px; color: var(--muted); }
 .hero-strip .v { font: 600 15px var(--mono); font-variant-numeric: tabular-nums; }
-.stat-grid { display: grid; grid-template-columns: 1fr 1fr; }
+.stat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .stat { padding: 16px 18px; border-color: var(--border); border-style: solid; border-width: 0 0 1px 0; }
 .stat:nth-child(odd) { border-right-width: 1px; }
 .stat:nth-last-child(-n + 2) { border-bottom-width: 0; }
 .stat { display: flex; flex-direction: column; }
-.stat-value-row { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.stat-value-row { display: flex; align-items: center; gap: 4px 6px; flex-wrap: wrap; min-width: 0; }
 .stat .label { color: var(--muted); font-size: 12px; }
 .stat-spark { margin-top: auto; padding-top: 10px; }
 .spark { display: block; overflow: visible; }
@@ -256,6 +256,7 @@ input[type='checkbox'] { width: auto; accent-color: var(--accent); }
 .badge.long { color: var(--pos); background: color-mix(in srgb, var(--pos) 13%, transparent); }
 .badge.short { color: var(--neg); background: color-mix(in srgb, var(--neg) 13%, transparent); }
 .badge.open { color: var(--warn); background: color-mix(in srgb, var(--warn) 13%, transparent); }
+.badge.lev { color: var(--accent); background: color-mix(in srgb, var(--accent) 13%, transparent); font-family: var(--mono); }
 .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: none; }
 
 /* ---------- table ---------- */
@@ -300,6 +301,16 @@ table.plain tbody tr { cursor: default; }
 .drawer-foot .preview { margin: 0 0 14px; }
 .drawer-actions { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
 .size-btn { width: 100%; justify-content: center; padding: 8px 9px; }
+.input-suffix { position: relative; }
+.input-suffix input { padding-right: 28px; }
+.input-suffix > span { position: absolute; right: 11px; top: 50%; transform: translateY(-50%); color: var(--faint); pointer-events: none; }
+.lev-presets { margin-top: 2px; gap: 4px; }
+.lev-presets .chip { padding: 1px 8px; font-size: 11px; }
+.lev-info { justify-content: center; gap: 4px; font-size: 13px; color: var(--text); padding-top: 18px; }
+.warn-box {
+  font-size: 13px; color: var(--text); line-height: 1.45; padding: 10px 12px; border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--neg) 12%, transparent); border: 1px solid color-mix(in srgb, var(--neg) 40%, transparent);
+}
 
 .tabs { display: flex; gap: 4px; margin-bottom: -1px; }
 .tab {

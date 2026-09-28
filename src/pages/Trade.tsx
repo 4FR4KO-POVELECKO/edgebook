@@ -7,7 +7,7 @@ import {
 import { Icon } from '../components/Icon'
 import { useTradeModal } from '../components/TradeTable'
 import { Empty, Lightbox, Stars } from '../components/ui'
-import { holdMinutes, isClosed, netPnl, plannedRR, returnPct, riskAmount, rMultiple } from '../lib/calc'
+import { holdMinutes, isClosed, leverageOf, liquidationPrice, marginUsed, netPnl, plannedRR, returnPct, riskAmount, rMultiple, roePct } from '../lib/calc'
 import { duration, fmtDateTime, num, pnlClass, price, rFmt, useMoney } from '../lib/format'
 import { label, useT } from '../i18n'
 import { MOBILE, useMedia } from '../lib/useMedia'
@@ -46,6 +46,7 @@ export default function TradePage() {
   const pnl = netPnl(trade)
   const r = rMultiple(trade)
   const rules = strategy?.rules.filter((rule) => rule in (trade.checklist ?? {})) ?? []
+  const lev = leverageOf(trade)
 
   return (
     <div className="stack">
@@ -60,6 +61,7 @@ export default function TradePage() {
               <Icon icon={trade.direction === 'long' ? ArrowUpRight01Icon : ArrowDownRight01Icon} size={12} strokeWidth={2.2} />
               {trade.direction === 'long' ? 'LONG' : 'SHORT'}
             </span>
+            {lev > 1 && <span className="badge lev">{num(lev, lev % 1 ? 1 : 0)}×</span>}
             {!closed && <span className="badge open">OPEN</span>}
           </div>
           <div className="row muted small" style={{ marginTop: 6, gap: 8 }}>
@@ -83,7 +85,10 @@ export default function TradePage() {
       <div className="card flush trade-stats">
         <TStat label={t.form.netPnl} value={closed ? money(pnl, { sign: true }) : t.tradePage.open} tone={closed ? pnl : undefined} big />
         <TStat label={t.form.rMultiple} value={rFmt(r)} tone={r} />
-        <TStat label={t.tradePage.ret} value={closed ? `${num(returnPct(trade), 2)}%` : '—'} tone={closed ? pnl : undefined} />
+        {lev > 1
+          ? <TStat label={t.tradePage.roe} value={closed ? `${num(roePct(trade), 1)}%` : '—'} tone={closed ? pnl : undefined}
+              sub={closed ? `${t.tradePage.ret} ${num(returnPct(trade), 2)}%` : undefined} />
+          : <TStat label={t.tradePage.ret} value={closed ? `${num(returnPct(trade), 2)}%` : '—'} tone={closed ? pnl : undefined} />}
         <TStat label={t.tradePage.hold} value={duration(holdMinutes(trade))} />
         <TStat label={t.tradePage.risk} value={riskAmount(trade) ? money(riskAmount(trade)!) : '—'} />
         <TStat label={t.tradePage.fees} value={money(trade.fees)} />
@@ -91,7 +96,15 @@ export default function TradePage() {
 
       <div className="trade-grid">
         <div className="card">
-          <div className="card-head"><h2>{t.tradePage.map}</h2>{plannedRR(trade) && <span className="muted small">R:R 1:{num(plannedRR(trade)!, 1)}</span>}</div>
+          <div className="card-head">
+            <h2>{t.tradePage.map}</h2>
+            <span className="muted small">
+              {[
+                plannedRR(trade) && `R:R 1:${num(plannedRR(trade)!, 1)}`,
+                lev > 1 && `${t.tradePage.leverage} ${num(lev, lev % 1 ? 1 : 0)}× · ${t.tradePage.margin} ${money(marginUsed(trade))}`,
+              ].filter(Boolean).join(' · ')}
+            </span>
+          </div>
           <TradeMap trade={trade} />
         </div>
 
@@ -147,11 +160,12 @@ export default function TradePage() {
   )
 }
 
-function TStat({ label, value, tone, big }: { label: string; value: ReactNode; tone?: number; big?: boolean }) {
+function TStat({ label, value, tone, big, sub }: { label: string; value: ReactNode; tone?: number; big?: boolean; sub?: ReactNode }) {
   return (
     <div className="stat">
       <div className="label">{label}</div>
       <div className={`value ${big ? 'big' : ''} ${tone != null ? pnlClass(tone) : ''}`}>{value}</div>
+      {sub != null && <div className="sub">{sub}</div>}
     </div>
   )
 }
@@ -167,6 +181,13 @@ function TradeMap({ trade }: { trade: Trade }) {
     { key: 'entry', value: trade.entryPrice, color: 'var(--muted)', dashed: false, label: t.tradePage.entry },
     { key: 'exit', value: closed ? trade.exitPrice : undefined, color: netPnl(trade) >= 0 ? 'var(--pos)' : 'var(--neg)', dashed: false, label: t.tradePage.exit },
   ].filter((l): l is typeof l & { value: number } => l.value != null && l.value > 0)
+
+  // liquidation is shown only when it's near the other levels, otherwise it would squash the map
+  const liq = liquidationPrice(trade)
+  const spread = Math.max(...levels.map((l) => Math.abs(l.value - trade.entryPrice)), 0)
+  if (liq != null && liq > 0 && spread > 0 && Math.abs(liq - trade.entryPrice) <= spread * 3) {
+    levels.push({ key: 'liq', value: +liq.toPrecision(6), color: 'var(--warn)', dashed: true, label: t.tradePage.liquidation })
+  }
 
   if (levels.length < 2) return <div className="hint">{t.tradePage.noLevels}</div>
 

@@ -13,7 +13,7 @@ function toKey(value: string, keys: string[], section: (d: (typeof DICTS)['en'])
 
 export const CSV_COLUMNS = [
   'symbol', 'market', 'direction', 'status', 'entryDate', 'exitDate', 'entryPrice', 'exitPrice',
-  'quantity', 'multiplier', 'fees', 'stopLoss', 'takeProfit', 'strategy', 'tags', 'mistakes',
+  'quantity', 'multiplier', 'leverage', 'fees', 'stopLoss', 'takeProfit', 'strategy', 'tags', 'mistakes',
   'emotion', 'rating', 'notes',
 ] as const
 
@@ -27,7 +27,7 @@ export function tradesToCsv(trades: Trade[], strategies: Strategy[]) {
   const rows = trades.map((t) =>
     [
       t.symbol, t.market, t.direction, t.status, t.entryDate, t.exitDate, t.entryPrice, t.exitPrice,
-      t.quantity, t.multiplier, t.fees, t.stopLoss, t.takeProfit,
+      t.quantity, t.multiplier, t.leverage, t.fees, t.stopLoss, t.takeProfit,
       t.strategyId ? sName.get(t.strategyId) : '', t.tags.join('|'), t.mistakes.join('|'),
       t.emotion, t.rating, t.notes,
     ].map(esc).join(','),
@@ -115,6 +115,7 @@ export function csvToTrades(text: string, strategies: Strategy[]): { trades: Tra
       exitPrice,
       quantity,
       multiplier: toNum(g('multiplier')) ?? 1,
+      leverage: (toNum(g('leverage')) ?? 1) > 1 ? toNum(g('leverage')) : undefined,
       fees: toNum(g('fees')) ?? 0,
       stopLoss: toNum(g('stopLoss')),
       takeProfit: toNum(g('takeProfit')),
