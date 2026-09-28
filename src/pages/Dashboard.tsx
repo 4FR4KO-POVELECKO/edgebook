@@ -1,5 +1,5 @@
 import { useMemo, type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Add01Icon, ArrowRight02Icon, Calendar03Icon, Note01Icon, Notebook01Icon, SparklesIcon, Target02Icon } from '@hugeicons/core-free-icons'
 import { Logo } from '../components/Logo'
 import { EquityChart } from '../components/charts'
@@ -35,6 +35,7 @@ function MoreLink({ to, children }: { to: string; children: ReactNode }) {
 export default function Dashboard() {
   const { trades, strategies, settings, restore, dayNotes } = useStore()
   const show = useTradeModal((s) => s.show)
+  const navigate = useNavigate()
   const money = useMoney()
   const t = useT()
 
@@ -128,7 +129,7 @@ export default function Dashboard() {
         <h1>{t.dashboard.title}</h1>
         <div className="row">
           {!hasTodayNote && <Link to="/calendar" className="btn"><Icon icon={Note01Icon} />{t.dashboard.todayPlan}</Link>}
-          <button className="primary" onClick={() => show()}><Icon icon={Add01Icon} />{t.nav.newTrade}</button>
+          <button className="primary desktop-only" onClick={() => show()}><Icon icon={Add01Icon} />{t.nav.newTrade}</button>
         </div>
       </div>
 
@@ -197,7 +198,7 @@ export default function Dashboard() {
           <div className="card">
             <div className="card-head"><h2>{t.dashboard.openPositions}</h2><span className="count-pill">{open.length}</span></div>
             {open.length === 0 ? <div className="hint">{t.dashboard.noOpen}</div> : open.map((tr) => (
-              <button key={tr.id} className="position-row" onClick={() => show(tr)}>
+              <button key={tr.id} className="position-row" onClick={() => navigate(`/trade/${tr.id}`)}>
                 <span>
                   <b>{tr.symbol}</b>{' '}
                   <span className={`badge ${tr.direction}`}>{tr.direction === 'long' ? 'LONG' : 'SHORT'}</span>

@@ -65,7 +65,13 @@ Describe your setups with a market, a timeframe and entry rules. Rules become a 
 
 <p align="center"><img src="docs/screenshots/strategies.png" alt="Strategies" width="820"></p>
 
+### Trade pages
+Every trade has its own page: key numbers, a trade map with stop, entry, target and exit levels, the strategy checklist, emotion, mistakes, notes and full-size screenshots. Step through trades with the arrows, edit in a side panel.
+
 ### And also
+- **Command palette** — press <kbd>⌘</kbd> <kbd>K</kbd> (<kbd>Ctrl</kbd> <kbd>K</kbd>) to jump to any page, find a trade by symbol or note, or switch theme and language
+- **Light and dark themes**, following your system by default
+- **Works on phones** — bottom navigation, a quick add button and card lists sized for touch
 - **English and Russian** interface, switchable at any time
 - **CSV import and export**, with a template and flexible column parsing
 - **JSON backup and restore** of the whole journal

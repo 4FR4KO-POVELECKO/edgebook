@@ -58,12 +58,12 @@ export default function Trades() {
           <button onClick={() => fileRef.current?.click()}><Icon icon={FileImportIcon} />{t.trades.importCsv}</button>
           <input ref={fileRef} type="file" accept=".csv,text/csv" hidden onChange={(e) => onImport(e.target.files?.[0])} />
           <button disabled={!filtered.length} onClick={() => download(`trades-${ymd(new Date())}.csv`, tradesToCsv(filtered, strategies), 'text/csv')}><Icon icon={FileExportIcon} />{t.trades.exportCsv}</button>
-          <button className="primary" onClick={() => show()}><Icon icon={Add01Icon} />{t.nav.newTrade}</button>
+          <button className="primary desktop-only" onClick={() => show()}><Icon icon={Add01Icon} />{t.nav.newTrade}</button>
         </div>
       </div>
 
       <div className="card">
-        <div className="row">
+        <div className="row filters">
           <input style={{ width: 200 }} placeholder={t.trades.search} value={q} onChange={(e) => setQ(e.target.value)} />
           <select style={{ width: 170 }} value={strategy} onChange={(e) => setStrategy(e.target.value)}>
             <option value="">{t.common.allStrategies}</option>

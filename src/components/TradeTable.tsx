@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { ArrowDownRight01Icon, ArrowUpRight01Icon, Image01Icon } from '@hugeicons/core-free-icons'
+import { useNavigate } from 'react-router-dom'
+import { MOBILE, useMedia } from '../lib/useMedia'
 import { create } from 'zustand'
 import { holdMinutes, isClosed, netPnl, rMultiple } from '../lib/calc'
 import { label, useT } from '../i18n'
@@ -31,10 +33,11 @@ type SortKey = 'date' | 'symbol' | 'pnl' | 'r'
 
 export function TradeTable({ trades, compact, sortable = true }: { trades: Trade[]; compact?: boolean; sortable?: boolean }) {
   const strategies = useStore((s) => s.strategies)
-  const show = useTradeModal((s) => s.show)
+  const navigate = useNavigate()
   const money = useMoney()
   const t = useT()
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: 'date', dir: -1 })
+  const mobile = useMedia(MOBILE)
   const sMap = new Map(strategies.map((s) => [s.id, s]))
 
   const val = (x: Trade): string | number => {
@@ -49,6 +52,35 @@ export function TradeTable({ trades, compact, sortable = true }: { trades: Trade
     const x = val(a), y = val(b)
     return (x < y ? -1 : x > y ? 1 : 0) * sort.dir
   })
+
+  if (mobile) {
+    return (
+      <div className="trade-cards">
+        {rows.map((tr) => {
+          const p = netPnl(tr)
+          const st = tr.strategyId ? sMap.get(tr.strategyId) : undefined
+          return (
+            <button key={tr.id} className="trade-card" onClick={() => navigate(`/trade/${tr.id}`)}>
+              <span className="trade-card-main">
+                <span className="row" style={{ gap: 6, flexWrap: 'nowrap' }}>
+                  <b>{tr.symbol}</b>
+                  <span className={`badge ${tr.direction}`}>{tr.direction === 'long' ? 'L' : 'S'}</span>
+                  {tr.status === 'open' && <span className="badge open">OPEN</span>}
+                </span>
+                <span className="hint">
+                  {fmtDateTime(tr.exitDate ?? tr.entryDate)}{st ? ` · ${st.name}` : ''}
+                </span>
+              </span>
+              <span className="trade-card-side">
+                <span className={`num ${pnlClass(p)}`}>{isClosed(tr) ? money(p, { sign: true }) : '—'}</span>
+                <span className={`hint num ${pnlClass(rMultiple(tr) ?? 0)}`}>{rFmt(rMultiple(tr))}</span>
+              </span>
+            </button>
+          )
+        })}
+      </div>
+    )
+  }
 
   const th = (key: SortKey, label: string, cls = '') => (
     <th className={`${sortable ? 'sortable' : ''} ${cls}`} onClick={() => sortable && setSort((s) => ({ key, dir: s.key === key ? (-s.dir as 1 | -1) : -1 }))}>
@@ -79,7 +111,7 @@ export function TradeTable({ trades, compact, sortable = true }: { trades: Trade
             const p = netPnl(tr)
             const st = tr.strategyId ? sMap.get(tr.strategyId) : undefined
             return (
-              <tr key={tr.id} onClick={() => show(tr)}>
+              <tr key={tr.id} onClick={() => navigate(`/trade/${tr.id}`)}>
                 <td className="muted">{fmtDateTime(tr.exitDate ?? tr.entryDate)}</td>
                 <td><b>{tr.symbol}</b></td>
                 <td>

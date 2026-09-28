@@ -1,34 +1,37 @@
-import { useId } from 'react'
+import { useId, useMemo } from 'react'
 import {
   Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, ReferenceDot, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts'
 import type { EquityPoint } from '../lib/calc'
 import { useT } from '../i18n'
 import { useMoney } from '../lib/format'
+import { useCssColors } from '../lib/theme'
 
-/** Mirrors the tokens in index.css; SVG presentation attributes can't read CSS variables. */
-const C = {
-  grid: '#1c2230',
-  axis: '#5d6579',
-  zero: '#2e3748',
-  tooltipBg: '#161b25',
-  tooltipBorder: '#2e3748',
-  text: '#e8ebf1',
-  muted: '#8b93a7',
-  pos: '#29c99f',
-  neg: '#f2636f',
-}
+const TOKENS = ['panel-2', 'panel-3', 'border-strong', 'faint', 'text', 'muted', 'pos', 'neg'] as const
 
-const AXIS = { stroke: C.axis, tick: { fill: C.axis }, tickLine: false, axisLine: false } as const
-const GRID = <CartesianGrid stroke={C.grid} strokeDasharray="3 3" vertical={false} />
-const tooltipStyle = {
-  contentStyle: {
-    background: C.tooltipBg, border: `1px solid ${C.tooltipBorder}`, borderRadius: 10, fontSize: 12,
-    boxShadow: '0 8px 24px rgba(0,0,0,.45)', padding: '8px 12px',
-  },
-  labelStyle: { color: C.muted, marginBottom: 2 },
-  itemStyle: { color: C.text, fontFamily: 'var(--mono)' },
-  cursor: { stroke: C.zero, fill: 'rgba(255,255,255,0.03)' },
+/** Chart styling from the current theme's CSS tokens (SVG presentation attributes can't use var()). */
+function useChartTheme() {
+  const v = useCssColors(TOKENS)
+  return useMemo(() => {
+    const C = {
+      grid: v['panel-3'], axis: v.faint, zero: v['border-strong'], tooltipBg: v['panel-2'],
+      tooltipBorder: v['border-strong'], text: v.text, muted: v.muted, pos: v.pos, neg: v.neg,
+    }
+    return {
+      C,
+      AXIS: { stroke: C.axis, tick: { fill: C.axis }, tickLine: false, axisLine: false } as const,
+      GRID: <CartesianGrid stroke={C.grid} strokeDasharray="3 3" vertical={false} />,
+      tooltipStyle: {
+        contentStyle: {
+          background: C.tooltipBg, border: `1px solid ${C.tooltipBorder}`, borderRadius: 10, fontSize: 12,
+          boxShadow: '0 8px 24px rgba(0,0,0,.25)', padding: '8px 12px',
+        },
+        labelStyle: { color: C.muted, marginBottom: 2 },
+        itemStyle: { color: C.text, fontFamily: 'var(--mono)' },
+        cursor: { stroke: C.zero, fill: 'color-mix(in srgb, currentColor 4%, transparent)' },
+      },
+    }
+  }, [v])
 }
 
 function EquityTip({ active, payload, marker }: { active?: boolean; payload?: readonly { payload?: EquityPoint }[]; marker?: string }) {
@@ -52,6 +55,7 @@ function EquityTip({ active, payload, marker }: { active?: boolean; payload?: re
 }
 
 export function EquityChart({ data, height = 260, markers = true }: { data: EquityPoint[]; height?: number; markers?: boolean }) {
+  const { C, AXIS, GRID, tooltipStyle } = useChartTheme()
   const money = useMoney()
   const t = useT()
   // several charts can share a page (strategies), so gradient ids must be unique
@@ -93,6 +97,7 @@ export function EquityChart({ data, height = 260, markers = true }: { data: Equi
 }
 
 export function DrawdownChart({ data, height = 120 }: { data: EquityPoint[]; height?: number }) {
+  const { C, AXIS, GRID, tooltipStyle } = useChartTheme()
   const money = useMoney()
   const t = useT()
   return (
@@ -112,6 +117,7 @@ export function DrawdownChart({ data, height = 120 }: { data: EquityPoint[]; hei
 export function PnlBars({ data, xKey = 'name', yKey = 'value', height = 240, label = 'P&L', unit = 'money', layout = 'horizontal' }: {
   data: Record<string, unknown>[]; xKey?: string; yKey?: string; height?: number; label?: string; unit?: 'money' | 'r' | 'count'; layout?: 'horizontal' | 'vertical'
 }) {
+  const { C, AXIS, GRID, tooltipStyle } = useChartTheme()
   const money = useMoney()
   const fmt = (v: number) => (unit === 'money' ? money(v, { compact: true }) : unit === 'r' ? `${v.toFixed(2)}R` : String(v))
   const vertical = layout === 'vertical'

@@ -42,7 +42,7 @@ const initial: BackupData = {
   trades: [],
   strategies: [],
   dayNotes: {},
-  settings: { lang: 'en', startingBalance: 10000, currency: '$', riskPercent: 1 },
+  settings: { lang: 'en', theme: 'system', startingBalance: 10000, currency: '$', riskPercent: 1 },
 }
 
 // v1 stored built-in markets/emotions/mistakes as Russian labels; v2 stores language-neutral keys.

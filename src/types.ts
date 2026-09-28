@@ -54,9 +54,11 @@ export interface DayNote {
 }
 
 export type Lang = 'en' | 'ru'
+export type ThemeMode = 'system' | 'light' | 'dark'
 
 export interface Settings {
   lang: Lang
+  theme: ThemeMode
   startingBalance: number
   currency: string
   /** default risk per trade in % of balance, for the position size calculator */

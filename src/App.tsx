@@ -1,37 +1,34 @@
 import { useEffect, useState } from 'react'
-import { HashRouter, NavLink, Route, Routes, useLocation } from 'react-router-dom'
-import {
-  Add01Icon, Analytics01Icon, Calendar03Icon, DashboardSquare01Icon, LeftToRightListBulletIcon, Settings02Icon, Target02Icon,
-} from '@hugeicons/core-free-icons'
+import { HashRouter, Link, NavLink, Route, Routes, useLocation } from 'react-router-dom'
+import { Add01Icon, Moon02Icon, Search01Icon, Sun03Icon } from '@hugeicons/core-free-icons'
+import { CommandPalette, usePalette } from './components/CommandPalette'
 import { Icon } from './components/Icon'
 import { Logo } from './components/Logo'
 import { TradeModalHost, useTradeModal } from './components/TradeTable'
+import { useResolvedTheme } from './lib/theme'
+import { NAV } from './nav'
 import Analytics from './pages/Analytics'
 import CalendarPage from './pages/Calendar'
 import Dashboard from './pages/Dashboard'
 import SettingsPage from './pages/Settings'
 import Strategies from './pages/Strategies'
+import TradePage from './pages/Trade'
 import Trades from './pages/Trades'
 import { LANGS, useT } from './i18n'
 import { useStore } from './store'
 
-const NAV = [
-  { to: '/', icon: DashboardSquare01Icon, key: 'dashboard' },
-  { to: '/trades', icon: LeftToRightListBulletIcon, key: 'trades' },
-  { to: '/calendar', icon: Calendar03Icon, key: 'calendar' },
-  { to: '/analytics', icon: Analytics01Icon, key: 'analytics' },
-  { to: '/strategies', icon: Target02Icon, key: 'strategies' },
-  { to: '/settings', icon: Settings02Icon, key: 'settings' },
-] as const
+const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
 
 /** Keyed by path so the fade-in replays on every navigation. */
 function Pages() {
   const { pathname } = useLocation()
+  useEffect(() => { window.scrollTo(0, 0) }, [pathname])
   return (
     <div className="page" key={pathname}>
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/trades" element={<Trades />} />
+        <Route path="/trade/:id" element={<TradePage />} />
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/strategies" element={<Strategies />} />
@@ -47,9 +44,22 @@ function useHydrated() {
   return ok
 }
 
+function ThemeButton() {
+  const theme = useResolvedTheme()
+  const setSettings = useStore((s) => s.setSettings)
+  const t = useT()
+  return (
+    <button className="icon-btn" title={t.palette.switchTheme} aria-label={t.palette.switchTheme}
+      onClick={() => setSettings({ theme: theme === 'dark' ? 'light' : 'dark' })}>
+      <Icon icon={theme === 'dark' ? Sun03Icon : Moon02Icon} size={16} />
+    </button>
+  )
+}
+
 export default function App() {
   const hydrated = useHydrated()
   const show = useTradeModal((s) => s.show)
+  const setPalette = usePalette((s) => s.setOpen)
   const t = useT()
   const lang = useStore((s) => s.settings.lang)
   const setSettings = useStore((s) => s.setSettings)
@@ -59,26 +69,45 @@ export default function App() {
     document.title = t.appName
   }, [lang, t])
 
-  // "N" opens a new trade from anywhere
+  // ⌘K / Ctrl+K opens the command palette; "N" opens a new trade
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === 'k' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault()
+        setPalette(!usePalette.getState().open)
+        return
+      }
       const el = e.target as HTMLElement
-      if (e.key.toLowerCase() === 'n' && !e.metaKey && !e.ctrlKey && !['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName) && !useTradeModal.getState().open) {
+      const typing = ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName)
+      if (e.key.toLowerCase() === 'n' && !e.metaKey && !e.ctrlKey && !typing && !useTradeModal.getState().open && !usePalette.getState().open) {
         e.preventDefault()
         show()
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [show])
+  }, [show, setPalette])
 
   if (!hydrated) return null
 
   return (
     <HashRouter>
       <div className="app">
+        <header className="topbar">
+          <Link to="/" className="brand"><Logo />{t.appName}</Link>
+          <div className="row" style={{ gap: 6 }}>
+            <button className="icon-btn" onClick={() => setPalette(true)} aria-label={t.nav.search}><Icon icon={Search01Icon} size={18} /></button>
+            <button className="primary icon-btn" onClick={() => show()} aria-label={t.nav.newTrade}><Icon icon={Add01Icon} size={18} /></button>
+          </div>
+        </header>
+
         <aside className="sidebar">
-          <div className="brand"><Logo />{t.appName}</div>
+          <Link to="/" className="brand"><Logo />{t.appName}</Link>
+          <button className="search-btn" onClick={() => setPalette(true)}>
+            <Icon icon={Search01Icon} size={16} />
+            <span>{t.nav.search}</span>
+            <kbd>{isMac ? '⌘' : 'Ctrl'} K</kbd>
+          </button>
           {NAV.map((n) => (
             <NavLink key={n.to} to={n.to} end className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
               <Icon icon={n.icon} />{t.nav[n.key]}
@@ -87,18 +116,32 @@ export default function App() {
           <div className="sidebar-foot">
             <button className="primary" style={{ width: '100%', justifyContent: 'center' }} onClick={() => show()}><Icon icon={Add01Icon} />{t.nav.newTrade}</button>
             <div className="hint" style={{ textAlign: 'center', marginTop: 6 }}>{t.nav.hotkey}</div>
-            <div className="seg lang-switch">
-              {LANGS.map((l) => (
-                <button key={l.value} className={lang === l.value ? 'on' : ''} onClick={() => setSettings({ lang: l.value })}>{l.label}</button>
-              ))}
+            <div className="row" style={{ marginTop: 14, gap: 6, flexWrap: 'nowrap' }}>
+              <div className="seg lang-switch">
+                {LANGS.map((l) => (
+                  <button key={l.value} className={lang === l.value ? 'on' : ''} onClick={() => setSettings({ lang: l.value })}>{l.label}</button>
+                ))}
+              </div>
+              <ThemeButton />
             </div>
           </div>
         </aside>
+
         <main className="main">
           <Pages />
         </main>
+
+        <nav className="tabbar">
+          {NAV.map((n) => (
+            <NavLink key={n.to} to={n.to} end className={({ isActive }) => `tab-link ${isActive ? 'active' : ''}`}>
+              <Icon icon={n.icon} size={20} />
+              <span>{t.nav[n.key]}</span>
+            </NavLink>
+          ))}
+        </nav>
       </div>
       <TradeModalHost />
+      <CommandPalette />
     </HashRouter>
   )
 }

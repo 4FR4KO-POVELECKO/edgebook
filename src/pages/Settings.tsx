@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { Delete02Icon, Download04Icon, FileDownloadIcon, SparklesIcon, Upload04Icon } from '@hugeicons/core-free-icons'
+import { ComputerIcon, Delete02Icon, Download04Icon, FileDownloadIcon, Moon02Icon, SparklesIcon, Sun03Icon, Upload04Icon } from '@hugeicons/core-free-icons'
 import { Icon } from '../components/Icon'
 import { Seg } from '../components/ui'
 import { LANGS, useT } from '../i18n'
@@ -35,8 +35,20 @@ export default function SettingsPage() {
       <div className="page-head"><h1>{t.settings.title}</h1></div>
 
       <div className="card">
-        <h2 style={{ marginBottom: 14 }}>{t.settings.language}</h2>
-        <Seg value={settings.lang} onChange={(lang) => setSettings({ lang })} options={LANGS.map((l) => ({ value: l.value, label: l.name }))} />
+        <div className="grid g2" style={{ gap: 20 }}>
+          <div>
+            <h2 style={{ marginBottom: 14 }}>{t.settings.language}</h2>
+            <Seg value={settings.lang} onChange={(lang) => setSettings({ lang })} options={LANGS.map((l) => ({ value: l.value, label: l.name }))} />
+          </div>
+          <div>
+            <h2 style={{ marginBottom: 14 }}>{t.settings.theme}</h2>
+            <Seg value={settings.theme ?? 'system'} onChange={(theme) => setSettings({ theme })} options={[
+              { value: 'system', label: <><Icon icon={ComputerIcon} size={16} />{t.settings.themeSystem}</> },
+              { value: 'light', label: <><Icon icon={Sun03Icon} size={16} />{t.settings.themeLight}</> },
+              { value: 'dark', label: <><Icon icon={Moon02Icon} size={16} />{t.settings.themeDark}</> },
+            ]} />
+          </div>
+        </div>
       </div>
 
       <div className="card">
