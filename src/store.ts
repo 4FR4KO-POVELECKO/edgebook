@@ -106,6 +106,7 @@ export const useStore = create<State>()(
       reset: () => setState((s) => ({ ...initial, settings: { ...initial.settings, lang: s.settings.lang } })),
     }),
     {
+      // storage key predates the Edgebook name; changing it would orphan existing data
       name: 'trader-journal',
       version: 2,
       storage: createJSONStorage(() => idbStorage),

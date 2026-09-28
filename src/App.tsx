@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { HashRouter, NavLink, Route, Routes } from 'react-router-dom'
 import {
-  Add01Icon, Analytics01Icon, Calendar03Icon, ChartCandlestickIcon, DashboardSquare01Icon, LeftToRightListBulletIcon, Settings02Icon, Target02Icon,
+  Add01Icon, Analytics01Icon, Calendar03Icon, DashboardSquare01Icon, LeftToRightListBulletIcon, Settings02Icon, Target02Icon,
 } from '@hugeicons/core-free-icons'
 import { Icon } from './components/Icon'
+import { Logo } from './components/Logo'
 import { TradeModalHost, useTradeModal } from './components/TradeTable'
 import Analytics from './pages/Analytics'
 import CalendarPage from './pages/Calendar'
@@ -60,7 +61,7 @@ export default function App() {
     <HashRouter>
       <div className="app">
         <aside className="sidebar">
-          <div className="brand"><span className="brand-logo"><Icon icon={ChartCandlestickIcon} size={18} /></span>{t.appName}</div>
+          <div className="brand"><Logo />{t.appName}</div>
           {NAV.map((n) => (
             <NavLink key={n.to} to={n.to} end className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
               <Icon icon={n.icon} />{t.nav[n.key]}

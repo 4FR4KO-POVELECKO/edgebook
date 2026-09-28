@@ -15,7 +15,7 @@ export default function SettingsPage() {
 
   const backup = () => {
     const data: BackupData = { trades, strategies, dayNotes, settings }
-    download(`trader-journal-backup-${ymd(new Date())}.json`, JSON.stringify(data), 'application/json')
+    download(`edgebook-backup-${ymd(new Date())}.json`, JSON.stringify(data), 'application/json')
   }
 
   const onRestore = async (f?: File) => {

@@ -2,7 +2,7 @@ const plural = (n: number, one: string, many: string) => (n === 1 ? one : many)
 
 export const en = {
   locale: 'en-US',
-  appName: 'Trader Journal',
+  appName: 'Edgebook',
 
   nav: {
     dashboard: 'Dashboard',

@@ -11,7 +11,7 @@ const trades = (n: number) => `${n} ${plural(n, 'сделка', 'сделки', 
 
 export const ru: Dict = {
   locale: 'ru-RU',
-  appName: 'Дневник трейдера',
+  appName: 'Edgebook',
 
   nav: {
     dashboard: 'Обзор',
