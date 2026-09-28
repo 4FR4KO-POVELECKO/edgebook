@@ -36,6 +36,7 @@ h3 { font-size: 14px; }
 .muted { color: var(--muted); }
 .mono, .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 .small { font-size: 12px; }
+.nowrap { white-space: nowrap; }
 
 /* ---------- layout ---------- */
 .app { display: grid; grid-template-columns: 220px 1fr; min-height: 100%; }

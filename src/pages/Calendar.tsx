@@ -69,7 +69,7 @@ export default function CalendarPage() {
         <div className="card kpi"><div className="label">{t.calendar.bestWorst}</div><div className="value small" style={{ fontSize: 15 }}>
           {(() => {
             const vals = [...new Set(monthTrades.map(tradeDay))].map(dayPnl)
-            return vals.length ? <><span className="pos">{money(Math.max(...vals), { sign: true })}</span> / <span className="neg">{money(Math.min(...vals), { sign: true })}</span></> : '—'
+            return vals.length ? <><span className="pos nowrap">{money(Math.max(...vals), { sign: true })}</span> / <span className="neg nowrap">{money(Math.min(...vals), { sign: true })}</span></> : '—'
           })()}
         </div></div>
       </div>

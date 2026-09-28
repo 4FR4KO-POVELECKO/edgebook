@@ -10,7 +10,8 @@ export function money(v: number, currency: string, opts: { sign?: boolean; compa
   const abs = Math.abs(v)
   const body = opts.compact && abs >= 10000 ? compact(abs) : nf(abs >= 1000 ? 0 : 2).format(abs)
   const sign = v < 0 ? '−' : opts.sign && v > 0 ? '+' : ''
-  return `${sign}${currency}${body}`
+  // U+2060 word joiner: '−' and '$' are both line-break prefixes, so browsers may wrap between them
+  return sign ? `${sign}\u2060${currency}${body}` : `${currency}${body}`
 }
 
 function compact(v: number) {
