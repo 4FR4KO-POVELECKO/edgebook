@@ -13,6 +13,10 @@
 </p>
 
 <p align="center">
+  <a href="https://4fr4ko-povelecko.github.io/edgebook/"><b>Open Edgebook →</b></a>
+</p>
+
+<p align="center">
   <img src="https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=white" alt="React 19">
   <img src="https://img.shields.io/badge/TypeScript-6-3178c6?logo=typescript&logoColor=white" alt="TypeScript">
   <img src="https://img.shields.io/badge/Vite-8-646cff?logo=vite&logoColor=white" alt="Vite">
@@ -75,7 +79,9 @@ The flip side: clearing site data deletes your journal, and data doesn't sync be
 
 ## Getting started
 
-Requires Node.js 20.19+ or 22.12+.
+The quickest way is to use the hosted version: **[4fr4ko-povelecko.github.io/edgebook](https://4fr4ko-povelecko.github.io/edgebook/)**. It's the same static app — your data still stays in your browser.
+
+To run it locally you need Node.js 20.19+ or 22.12+.
 
 ```bash
 git clone https://github.com/4FR4KO-POVELECKO/edgebook.git
@@ -91,6 +97,8 @@ To build a static version for any web host:
 ```bash
 npm run build   # output in dist/
 ```
+
+Every push to `main` is deployed to GitHub Pages by [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml). The production build is served from `/edgebook/` — change `base` in `vite.config.ts` if you fork the repo under another name.
 
 ## Importing trades from CSV
 
