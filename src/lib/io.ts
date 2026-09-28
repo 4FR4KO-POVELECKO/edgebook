@@ -1,5 +1,15 @@
+import { DICTS, dict } from '../i18n'
 import { uid } from '../store'
-import type { Strategy, Trade } from '../types'
+import { EMOTIONS, MARKETS, type Strategy, type Trade } from '../types'
+
+/** Accepts a key ('crypto') or a label in any language ('Crypto', 'Крипто'). */
+function toKey(value: string, keys: string[], section: (d: (typeof DICTS)['en']) => Record<string, string>) {
+  const v = value.trim().toLowerCase()
+  for (const k of keys) {
+    if (k === v || Object.values(DICTS).some((d) => section(d)[k]?.toLowerCase() === v)) return k
+  }
+  return value.trim()
+}
 
 export const CSV_COLUMNS = [
   'symbol', 'market', 'direction', 'status', 'entryDate', 'exitDate', 'entryPrice', 'exitPrice',
@@ -59,7 +69,7 @@ const toNum = (s?: string) => {
 /** Returns trades plus names of strategies that don't exist yet (caller creates them). */
 export function csvToTrades(text: string, strategies: Strategy[]): { trades: Trade[]; errors: string[]; newStrategies: Strategy[] } {
   const rows = parseCsv(text)
-  if (rows.length < 2) return { trades: [], errors: ['Файл пустой'], newStrategies: [] }
+  if (rows.length < 2) return { trades: [], errors: [dict().csv.empty], newStrategies: [] }
   const header = rows[0].map((h) => h.trim())
   const idx = (k: string) => header.indexOf(k)
   const errors: string[] = []
@@ -74,7 +84,7 @@ export function csvToTrades(text: string, strategies: Strategy[]): { trades: Tra
     const quantity = toNum(g('quantity'))
     const entryDate = g('entryDate')
     if (!symbol || entryPrice == null || quantity == null || !entryDate) {
-      errors.push(`Строка ${i + 2}: нужны symbol, entryDate, entryPrice, quantity`)
+      errors.push(dict().csv.rowError(i + 2))
       return
     }
     let strategyId: string | undefined
@@ -96,7 +106,7 @@ export function csvToTrades(text: string, strategies: Strategy[]): { trades: Tra
     trades.push({
       id: uid(),
       symbol: symbol.toUpperCase(),
-      market: g('market') || 'Акции',
+      market: toKey(g('market') || 'stocks', MARKETS, (d) => d.markets),
       direction: dir === 'short' || dir === 'sell' || dir === 'шорт' ? 'short' : 'long',
       status: status === 'open' || exitPrice == null || !exitDate ? 'open' : 'closed',
       entryDate: entryDate.replace(' ', 'T').slice(0, 16),
@@ -111,8 +121,8 @@ export function csvToTrades(text: string, strategies: Strategy[]): { trades: Tra
       strategyId,
       checklist: {},
       tags: split(g('tags')),
-      mistakes: split(g('mistakes')),
-      emotion: g('emotion') || undefined,
+      mistakes: split(g('mistakes')).map((m) => toKey(m, Object.keys(DICTS.en.mistakes), (d) => d.mistakes)),
+      emotion: g('emotion') ? toKey(g('emotion')!, EMOTIONS, (d) => d.emotions) : undefined,
       rating: toNum(g('rating')),
       notes: g('notes') ?? '',
       screenshots: [],

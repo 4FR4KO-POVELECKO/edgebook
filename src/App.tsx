@@ -7,16 +7,17 @@ import Dashboard from './pages/Dashboard'
 import SettingsPage from './pages/Settings'
 import Strategies from './pages/Strategies'
 import Trades from './pages/Trades'
+import { LANGS, useT } from './i18n'
 import { useStore } from './store'
 
 const NAV = [
-  { to: '/', icon: '◧', label: 'Обзор' },
-  { to: '/trades', icon: '☰', label: 'Сделки' },
-  { to: '/calendar', icon: '▦', label: 'Календарь' },
-  { to: '/analytics', icon: '◔', label: 'Аналитика' },
-  { to: '/strategies', icon: '◈', label: 'Стратегии' },
-  { to: '/settings', icon: '⚙', label: 'Настройки' },
-]
+  { to: '/', icon: '◧', key: 'dashboard' },
+  { to: '/trades', icon: '☰', key: 'trades' },
+  { to: '/calendar', icon: '▦', key: 'calendar' },
+  { to: '/analytics', icon: '◔', key: 'analytics' },
+  { to: '/strategies', icon: '◈', key: 'strategies' },
+  { to: '/settings', icon: '⚙', key: 'settings' },
+] as const
 
 function useHydrated() {
   const [ok, setOk] = useState(useStore.persist.hasHydrated())
@@ -27,6 +28,14 @@ function useHydrated() {
 export default function App() {
   const hydrated = useHydrated()
   const show = useTradeModal((s) => s.show)
+  const t = useT()
+  const lang = useStore((s) => s.settings.lang)
+  const setSettings = useStore((s) => s.setSettings)
+
+  useEffect(() => {
+    document.documentElement.lang = lang
+    document.title = t.appName
+  }, [lang, t])
 
   // "N" opens a new trade from anywhere
   useEffect(() => {
@@ -47,15 +56,20 @@ export default function App() {
     <HashRouter>
       <div className="app">
         <aside className="sidebar">
-          <div className="brand"><span className="brand-dot" />Дневник трейдера</div>
+          <div className="brand"><span className="brand-dot" />{t.appName}</div>
           {NAV.map((n) => (
             <NavLink key={n.to} to={n.to} end className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-              <span className="nav-icon">{n.icon}</span>{n.label}
+              <span className="nav-icon">{n.icon}</span>{t.nav[n.key]}
             </NavLink>
           ))}
           <div className="sidebar-foot">
-            <button className="primary" style={{ width: '100%', justifyContent: 'center' }} onClick={() => show()}>+ Сделка</button>
-            <div className="hint" style={{ textAlign: 'center', marginTop: 6 }}>или клавиша N</div>
+            <button className="primary" style={{ width: '100%', justifyContent: 'center' }} onClick={() => show()}>{t.nav.newTrade}</button>
+            <div className="hint" style={{ textAlign: 'center', marginTop: 6 }}>{t.nav.hotkey}</div>
+            <div className="seg lang-switch">
+              {LANGS.map((l) => (
+                <button key={l.value} className={lang === l.value ? 'on' : ''} onClick={() => setSettings({ lang: l.value })}>{l.label}</button>
+              ))}
+            </div>
           </div>
         </aside>
         <main className="main">

@@ -53,37 +53,23 @@ export interface DayNote {
   mood?: number
 }
 
+export type Lang = 'en' | 'ru'
+
 export interface Settings {
+  lang: Lang
   startingBalance: number
   currency: string
   /** default risk per trade in % of balance, for the position size calculator */
   riskPercent: number
 }
 
-export const MARKETS = ['Акции', 'Крипто', 'Фьючерсы', 'Форекс', 'Опционы', 'Другое']
+// Built-in values are stored as language-neutral keys and translated on display (see i18n).
+export const MARKETS = ['stocks', 'crypto', 'futures', 'forex', 'options', 'other']
 
-export const EMOTIONS = [
-  'Спокойствие',
-  'Уверенность',
-  'Страх',
-  'Жадность',
-  'FOMO',
-  'Азарт',
-  'Раздражение',
-  'Усталость',
-  'Месть рынку',
-]
+export const EMOTIONS = ['calm', 'confident', 'fear', 'greed', 'fomo', 'excitement', 'frustration', 'tired', 'revenge']
 
 export const DEFAULT_MISTAKES = [
-  'Вход без сетапа',
-  'Не поставил стоп',
-  'Передвинул стоп',
-  'Ранний выход',
-  'Поздний вход',
-  'Завышенный объём',
-  'Усреднение убытка',
-  'Торговля против тренда',
-  'Овертрейдинг',
+  'no_setup', 'no_stop', 'moved_stop', 'early_exit', 'late_entry', 'oversized', 'averaging_down', 'against_trend', 'overtrading',
 ]
 
 export const STRATEGY_COLORS = [

@@ -2,6 +2,7 @@ import {
   Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts'
 import type { EquityPoint } from '../lib/calc'
+import { useT } from '../i18n'
 import { useMoney } from '../lib/format'
 
 const AXIS = { stroke: '#8a94a3', tickLine: false, axisLine: false } as const
@@ -15,6 +16,7 @@ const tooltipStyle = {
 
 export function EquityChart({ data, height = 260 }: { data: EquityPoint[]; height?: number }) {
   const money = useMoney()
+  const t = useT()
   const up = data.length > 1 && data[data.length - 1].equity >= data[0].equity
   const color = up ? '#22c3a6' : '#f0616d'
   return (
@@ -29,8 +31,8 @@ export function EquityChart({ data, height = 260 }: { data: EquityPoint[]; heigh
         {GRID}
         <XAxis dataKey="i" {...AXIS} minTickGap={30} />
         <YAxis {...AXIS} width={70} domain={['auto', 'auto']} tickFormatter={(v) => money(v, { compact: true })} />
-        <Tooltip {...tooltipStyle} labelFormatter={(i, p) => `Сделка #${i}${p?.[0]?.payload?.date ? ' · ' + p[0].payload.date : ''}`}
-          formatter={(v, name) => [money(Number(v)), name === 'equity' ? 'Баланс' : String(name)]} />
+        <Tooltip {...tooltipStyle} labelFormatter={(i, p) => `${t.charts.trade(Number(i))}${p?.[0]?.payload?.date ? ' · ' + p[0].payload.date : ''}`}
+          formatter={(v, name) => [money(Number(v)), name === 'equity' ? t.charts.balance : String(name)]} />
         <Area type="monotone" dataKey="equity" stroke={color} strokeWidth={2} fill="url(#eqFill)" isAnimationActive={false} />
       </AreaChart>
     </ResponsiveContainer>
@@ -39,13 +41,14 @@ export function EquityChart({ data, height = 260 }: { data: EquityPoint[]; heigh
 
 export function DrawdownChart({ data, height = 120 }: { data: EquityPoint[]; height?: number }) {
   const money = useMoney()
+  const t = useT()
   return (
     <ResponsiveContainer width="100%" height={height}>
       <AreaChart data={data} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
         {GRID}
         <XAxis dataKey="i" {...AXIS} minTickGap={30} />
         <YAxis {...AXIS} width={70} tickFormatter={(v) => money(v, { compact: true })} />
-        <Tooltip {...tooltipStyle} labelFormatter={(i) => `Сделка #${i}`} formatter={(v) => [money(Number(v)), 'Просадка']} />
+        <Tooltip {...tooltipStyle} labelFormatter={(i) => t.charts.trade(Number(i))} formatter={(v) => [money(Number(v)), t.charts.drawdown]} />
         <Area type="monotone" dataKey="drawdown" stroke="#f0616d" fill="rgba(240,97,109,0.2)" isAnimationActive={false} />
       </AreaChart>
     </ResponsiveContainer>

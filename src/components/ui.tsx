@@ -1,7 +1,9 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { useT } from '../i18n'
 import { pnlClass } from '../lib/format'
 
 export function Modal({ title, onClose, children, narrow }: { title: ReactNode; onClose: () => void; children: ReactNode; narrow?: boolean }) {
+  const t = useT()
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
     window.addEventListener('keydown', onKey)
@@ -12,7 +14,7 @@ export function Modal({ title, onClose, children, narrow }: { title: ReactNode; 
       <div className={`modal ${narrow ? 'narrow' : ''}`}>
         <div className="modal-head">
           <h2>{title}</h2>
-          <button className="ghost" onClick={onClose} aria-label="Закрыть">✕</button>
+          <button className="ghost" onClick={onClose} aria-label={t.common.close}>✕</button>
         </div>
         {children}
       </div>
@@ -52,7 +54,10 @@ export function Stars({ value, onChange }: { value?: number; onChange?: (v?: num
   )
 }
 
-export function ChipPicker({ options, value, onChange, bad, allowAdd }: { options: string[]; value: string[]; onChange: (v: string[]) => void; bad?: boolean; allowAdd?: boolean }) {
+export function ChipPicker({ options, value, onChange, bad, allowAdd, format = (x) => x }: {
+  options: string[]; value: string[]; onChange: (v: string[]) => void; bad?: boolean; allowAdd?: boolean; format?: (v: string) => string
+}) {
+  const t = useT()
   const [draft, setDraft] = useState('')
   const all = [...new Set([...options, ...value])]
   const toggle = (o: string) => onChange(value.includes(o) ? value.filter((x) => x !== o) : [...value, o])
@@ -64,12 +69,12 @@ export function ChipPicker({ options, value, onChange, bad, allowAdd }: { option
   return (
     <div className="chips">
       {all.map((o) => (
-        <span key={o} className={`chip ${bad ? 'bad' : ''} ${value.includes(o) ? 'on' : ''}`} onClick={() => toggle(o)}>{o}</span>
+        <span key={o} className={`chip ${bad ? 'bad' : ''} ${value.includes(o) ? 'on' : ''}`} onClick={() => toggle(o)}>{format(o)}</span>
       ))}
       {allowAdd && (
         <input
           style={{ width: 140, padding: '3px 9px', borderRadius: 999, fontSize: 12 }}
-          placeholder="+ добавить"
+          placeholder={t.form.addChip}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add() } }}

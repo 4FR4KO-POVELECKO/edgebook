@@ -5,15 +5,16 @@ import {
   computeStats, equityCurve, groupBy, holdMinutes, isClosed, netPnl, rMultiple, round2, sortByExit, sum, tradeDay, type Stats,
 } from '../lib/calc'
 import { duration, num, pct, pnlClass, rFmt, useMoney, ymd } from '../lib/format'
+import { label, useT, type Dict } from '../i18n'
 import { useStore } from '../store'
 import type { Trade } from '../types'
 
 type Period = 'all' | '30' | '90' | 'ytd'
-const WD = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
 
 export default function Analytics() {
   const { trades, strategies, settings } = useStore()
   const money = useMoney()
+  const t = useT()
   const [period, setPeriod] = useState<Period>('all')
   const [strategy, setStrategy] = useState('')
   const [market, setMarket] = useState('')
@@ -38,7 +39,7 @@ export default function Analytics() {
     return [...m].sort(([a], [b]) => a.localeCompare(b)).map(([d, ts]) => ({ name: d.slice(5).split('-').reverse().join('.'), value: round2(sum(ts.map(netPnl))) }))
   }, [filtered])
 
-  const byWeekday = WD.map((name, i) => ({
+  const byWeekday = t.weekdaysShort.map((name, i) => ({
     name, value: round2(sum(filtered.filter((t) => (new Date(t.entryDate).getDay() + 6) % 7 === i).map(netPnl))),
   })).filter((x, i) => i < 5 || x.value !== 0)
 
@@ -52,9 +53,9 @@ export default function Analytics() {
     return labels.map((name, i) => ({ name, value: rs.filter((r) => r >= edges[i] && r < edges[i + 1]).length, sign: i < 4 ? -1 : 1 }))
   }, [filtered])
 
-  if (!trades.some(isClosed)) return <div className="card"><Empty title="Нет закрытых сделок для анализа" /></div>
+  if (!trades.some(isClosed)) return <div className="card"><Empty title={t.analytics.noClosed} /></div>
 
-  const sName = (id: string) => strategies.find((s) => s.id === id)?.name ?? 'Без стратегии'
+  const sName = (id: string) => strategies.find((s) => s.id === id)?.name ?? t.common.noStrategy
   const sColor = (id: string) => strategies.find((s) => s.id === id)?.color
 
   // mistakes: cost & what-if
@@ -67,65 +68,65 @@ export default function Analytics() {
   const followed = withChecklist.filter((t) => Object.values(t.checklist).every(Boolean))
   const broken = withChecklist.filter((t) => !Object.values(t.checklist).every(Boolean))
 
-  const holdBucket = (t: Trade) => {
-    const m = holdMinutes(t) ?? 0
-    return m < 15 ? '< 15 мин' : m < 60 ? '15–60 мин' : m < 240 ? '1–4 ч' : m < 1440 ? '4–24 ч' : '> 1 дня'
+  const holdLabels = t.analytics.hold
+  const holdBucket = (x: Trade) => {
+    const m = holdMinutes(x) ?? 0
+    return holdLabels[m < 15 ? 0 : m < 60 ? 1 : m < 240 ? 2 : m < 1440 ? 3 : 4]
   }
-  const holdOrder = ['< 15 мин', '15–60 мин', '1–4 ч', '4–24 ч', '> 1 дня']
 
   return (
     <div className="stack">
       <div className="page-head">
-        <h1>Аналитика</h1>
+        <h1>{t.analytics.title}</h1>
         <div className="row">
-          <Seg value={period} onChange={setPeriod} options={[{ value: '30', label: '30 дн' }, { value: '90', label: '90 дн' }, { value: 'ytd', label: 'С начала года' }, { value: 'all', label: 'Всё время' }]} />
+          <Seg value={period} onChange={setPeriod} options={[{ value: '30', label: t.analytics.d30 }, { value: '90', label: t.analytics.d90 }, { value: 'ytd', label: t.analytics.ytd }, { value: 'all', label: t.analytics.allTime }]} />
           <select style={{ width: 170 }} value={strategy} onChange={(e) => setStrategy(e.target.value)}>
-            <option value="">Все стратегии</option>
-            <option value="-">Без стратегии</option>
+            <option value="">{t.common.allStrategies}</option>
+            <option value="-">{t.common.noStrategy}</option>
             {strategies.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
           <select style={{ width: 130 }} value={market} onChange={(e) => setMarket(e.target.value)}>
-            <option value="">Все рынки</option>
-            {markets.map((m) => <option key={m}>{m}</option>)}
+            <option value="">{t.common.allMarkets}</option>
+            {markets.map((m) => <option key={m} value={m}>{label(t.markets, m)}</option>)}
           </select>
         </div>
       </div>
 
-      {filtered.length === 0 ? <div className="card"><Empty title="Нет сделок под выбранные фильтры" /></div> : <>
-        <MetricsGrid st={st} />
+      {filtered.length === 0 ? <div className="card"><Empty title={t.analytics.noMatch} /></div> : <>
+        <MetricsGrid st={st} t={t} />
 
         <div className="card">
-          <div className="card-head"><h2>Кривая баланса</h2><span className={`num ${pnlClass(st.net)}`}>{money(st.net, { sign: true })}</span></div>
+          <div className="card-head"><h2>{t.analytics.equity}</h2><span className={`num ${pnlClass(st.net)}`}>{money(st.net, { sign: true })}</span></div>
           <EquityChart data={curve} height={280} />
-          <div className="section-title" style={{ marginTop: 8 }}>Просадка</div>
+          <div className="section-title" style={{ marginTop: 8 }}>{t.analytics.drawdown}</div>
           <DrawdownChart data={curve} />
         </div>
 
         <div className="card">
-          <div className="card-head"><h2>P&L по дням</h2></div>
+          <div className="card-head"><h2>{t.analytics.daily}</h2></div>
           <PnlBars data={daily} />
         </div>
 
         <div className="grid g2">
-          <div className="card"><div className="card-head"><h2>По дням недели</h2></div><PnlBars data={byWeekday} height={220} /></div>
-          <div className="card"><div className="card-head"><h2>По часу входа</h2></div><PnlBars data={byHour} height={220} /></div>
+          <div className="card"><div className="card-head"><h2>{t.analytics.weekday}</h2></div><PnlBars data={byWeekday} height={220} /></div>
+          <div className="card"><div className="card-head"><h2>{t.analytics.hour}</h2></div><PnlBars data={byHour} height={220} /></div>
         </div>
 
         <div className="grid g2">
           <div className="card">
-            <div className="card-head"><h2>Распределение R-multiple</h2><span className="muted small">{rFmt(st.totalR)} всего</span></div>
-            {st.avgR == null ? <div className="hint">Укажи стоп-лосс в сделках, чтобы считать R</div> : <PnlBars data={rBuckets} unit="count" label="Сделок" height={220} />}
+            <div className="card-head"><h2>{t.analytics.rDist}</h2><span className="muted small">{t.analytics.rTotal(rFmt(st.totalR))}</span></div>
+            {st.avgR == null ? <div className="hint">{t.analytics.rHint}</div> : <PnlBars data={rBuckets} unit="count" label={t.analytics.tradesAxis} height={220} />}
           </div>
           <div className="card">
-            <div className="card-head"><h2>Long vs Short</h2></div>
+            <div className="card-head"><h2>{t.analytics.longShort}</h2></div>
             <Breakdown rows={[...groupBy(filtered, (t) => t.direction)].map(([k, ts]) => ({ key: k, label: k === 'long' ? '▲ Long' : '▼ Short', trades: ts }))} />
-            <div className="section-title">Время удержания</div>
-            <Breakdown rows={[...groupBy(filtered, holdBucket)].sort(([a], [b]) => holdOrder.indexOf(a) - holdOrder.indexOf(b)).map(([k, ts]) => ({ key: k, label: k, trades: ts }))} sort={false} />
+            <div className="section-title">{t.analytics.holdTime}</div>
+            <Breakdown rows={[...groupBy(filtered, holdBucket)].sort(([a], [b]) => holdLabels.indexOf(a) - holdLabels.indexOf(b)).map(([k, ts]) => ({ key: k, label: k, trades: ts }))} sort={false} />
           </div>
         </div>
 
         <div className="card">
-          <div className="card-head"><h2>По стратегиям</h2></div>
+          <div className="card-head"><h2>{t.analytics.byStrategy}</h2></div>
           <Breakdown rows={[...groupBy(filtered, (t) => t.strategyId ?? '')].map(([k, ts]) => ({
             key: k, trades: ts,
             label: <span className="row" style={{ gap: 6 }}><span className="dot" style={{ background: sColor(k) ?? '#8a94a3' }} />{sName(k)}</span>,
@@ -134,35 +135,35 @@ export default function Analytics() {
 
         <div className="grid g2">
           <div className="card">
-            <div className="card-head"><h2>Цена ошибок</h2><span className={`num ${pnlClass(mistakeCost)}`}>{money(mistakeCost, { sign: true })}</span></div>
+            <div className="card-head"><h2>{t.analytics.mistakeCost}</h2><span className={`num ${pnlClass(mistakeCost)}`}>{money(mistakeCost, { sign: true })}</span></div>
             <div className="hint" style={{ marginBottom: 10 }}>
-              Без сделок с ошибками результат был бы <b className={pnlClass(sum(clean.map(netPnl)))}>{money(sum(clean.map(netPnl)), { sign: true })}</b> вместо <b className={pnlClass(st.net)}>{money(st.net, { sign: true })}</b>.
-              Win rate чистых сделок: <b>{pct(computeStats(clean).winRate)}</b>, с ошибками: <b>{pct(computeStats(withMistakes).winRate)}</b>.
+              {t.analytics.whatIf} <b className={pnlClass(sum(clean.map(netPnl)))}>{money(sum(clean.map(netPnl)), { sign: true })}</b> {t.analytics.insteadOf} <b className={pnlClass(st.net)}>{money(st.net, { sign: true })}</b>.
+              {t.analytics.mistakeWr(pct(computeStats(clean).winRate), pct(computeStats(withMistakes).winRate))}
             </div>
-            {withMistakes.length ? <Breakdown rows={[...groupBy(withMistakes, (t) => t.mistakes)].map(([k, ts]) => ({ key: k, label: <span className="tag bad">{k}</span>, trades: ts }))} /> : <div className="hint">Ошибок не отмечено 👍</div>}
+            {withMistakes.length ? <Breakdown rows={[...groupBy(withMistakes, (t) => t.mistakes)].map(([k, ts]) => ({ key: k, label: <span className="tag bad">{label(t.mistakes, k)}</span>, trades: ts }))} /> : <div className="hint">{t.analytics.noMistakes}</div>}
           </div>
           <div className="card">
-            <div className="card-head"><h2>Дисциплина: чек-лист стратегии</h2></div>
+            <div className="card-head"><h2>{t.analytics.discipline}</h2></div>
             {withChecklist.length ? (
               <Breakdown rows={[
-                { key: 'y', label: '✅ Все правила соблюдены', trades: followed },
-                { key: 'n', label: '⚠️ Правила нарушены', trades: broken },
+                { key: 'y', label: t.analytics.rulesFollowed, trades: followed },
+                { key: 'n', label: t.analytics.rulesBroken, trades: broken },
               ].filter((r) => r.trades.length)} />
-            ) : <div className="hint">Отмечай правила стратегии в сделках, и здесь появится сравнение</div>}
-            <div className="section-title">По эмоциям</div>
-            <Breakdown rows={[...groupBy(filtered.filter((t) => t.emotion), (t) => t.emotion!)].map(([k, ts]) => ({ key: k, label: k, trades: ts }))} />
+            ) : <div className="hint">{t.analytics.checklistHint}</div>}
+            <div className="section-title">{t.analytics.byEmotion}</div>
+            <Breakdown rows={[...groupBy(filtered.filter((t) => t.emotion), (x) => x.emotion!)].map(([k, ts]) => ({ key: k, label: label(t.emotions, k), trades: ts }))} />
           </div>
         </div>
 
         <div className="grid g2">
           <div className="card">
-            <div className="card-head"><h2>По тикерам</h2></div>
+            <div className="card-head"><h2>{t.analytics.bySymbol}</h2></div>
             <Breakdown rows={[...groupBy(filtered, (t) => t.symbol)].map(([k, ts]) => ({ key: k, label: <b>{k}</b>, trades: ts }))} limit={12} />
           </div>
           <div className="card">
-            <div className="card-head"><h2>По тегам</h2></div>
+            <div className="card-head"><h2>{t.analytics.byTag}</h2></div>
             <Breakdown rows={[...groupBy(filtered.filter((t) => t.tags.length), (t) => t.tags)].map(([k, ts]) => ({ key: k, label: <span className="tag">{k}</span>, trades: ts }))} limit={12} />
-            <div className="section-title">По оценке исполнения</div>
+            <div className="section-title">{t.analytics.byRating}</div>
             <Breakdown rows={[...groupBy(filtered.filter((t) => t.rating), (t) => String(t.rating))].sort(([a], [b]) => Number(b) - Number(a)).map(([k, ts]) => ({ key: k, label: <span style={{ color: 'var(--warn)' }}>{'★'.repeat(Number(k))}</span>, trades: ts }))} sort={false} />
           </div>
         </div>
@@ -171,25 +172,26 @@ export default function Analytics() {
   )
 }
 
-function MetricsGrid({ st }: { st: Stats }) {
+function MetricsGrid({ st, t }: { st: Stats; t: Dict }) {
   const money = useMoney()
+  const m = t.analytics.m
   const items: [string, ReactNode, number?][] = [
-    ['Net P&L', money(st.net, { sign: true }), st.net],
-    ['Сделок', st.count],
-    ['Win rate', pct(st.winRate)],
-    ['Profit factor', num(st.profitFactor)],
-    ['Матожидание', money(st.expectancy, { sign: true }), st.expectancy],
-    ['Средний R', rFmt(st.avgR), st.avgR],
-    ['Средняя прибыль', money(st.avgWin), 1],
-    ['Средний убыток', money(-st.avgLoss), -1],
-    ['Payoff ratio', num(st.payoff)],
-    ['Лучшая сделка', money(st.largestWin, { sign: true }), 1],
-    ['Худшая сделка', money(st.largestLoss, { sign: true }), -1],
-    ['Макс. просадка', `${money(-st.maxDrawdown)} · ${pct(st.maxDrawdownPct)}`, -1],
-    ['Серии W / L', `${st.maxWinStreak} / ${st.maxLossStreak}`],
-    ['Зелёных дней', `${st.greenDays} из ${st.tradingDays}`],
-    ['Ср. удержание', duration(st.avgHoldMin)],
-    ['Комиссии', money(-st.fees), st.fees ? -1 : 0],
+    [m.net, money(st.net, { sign: true }), st.net],
+    [m.count, st.count],
+    [m.winRate, pct(st.winRate)],
+    [m.pf, num(st.profitFactor)],
+    [m.expectancy, money(st.expectancy, { sign: true }), st.expectancy],
+    [m.avgR, rFmt(st.avgR), st.avgR],
+    [m.avgWin, money(st.avgWin), 1],
+    [m.avgLoss, money(-st.avgLoss), -1],
+    [m.payoff, num(st.payoff)],
+    [m.best, money(st.largestWin, { sign: true }), 1],
+    [m.worst, money(st.largestLoss, { sign: true }), -1],
+    [m.maxDd, `${money(-st.maxDrawdown)} · ${pct(st.maxDrawdownPct)}`, -1],
+    [m.streaks, `${st.maxWinStreak} / ${st.maxLossStreak}`],
+    [m.greenDays, t.common.of(st.greenDays, st.tradingDays)],
+    [m.avgHold, duration(st.avgHoldMin)],
+    [m.fees, money(-st.fees), st.fees ? -1 : 0],
   ]
   return (
     <div className="card">
@@ -207,19 +209,20 @@ function MetricsGrid({ st }: { st: Stats }) {
 
 function Breakdown({ rows, limit, withR, sort = true }: { rows: { key: string; label: ReactNode; trades: Trade[] }[]; limit?: number; withR?: boolean; sort?: boolean }) {
   const money = useMoney()
+  const t = useT()
   const data = rows.map((r) => ({ ...r, st: computeStats(sortByExit(r.trades)) }))
   if (sort) data.sort((a, b) => b.st.net - a.st.net)
   const shown = limit ? data.slice(0, limit) : data
   const maxAbs = Math.max(1, ...shown.map((r) => Math.abs(r.st.net)))
-  if (!shown.length) return <div className="hint">Нет данных</div>
+  if (!shown.length) return <div className="hint">{t.common.noData}</div>
   return (
     <div className="table-wrap">
       <table className="plain">
         <thead>
           <tr>
-            <th></th><th className="r">Сделок</th><th className="r">WR</th><th className="r">PF</th>
-            {withR && <th className="r">Ср. R</th>}
-            <th className="r">Ср. P&L</th><th className="r">Итого</th><th style={{ width: '22%' }}></th>
+            <th></th><th className="r">{t.analytics.col.trades}</th><th className="r">WR</th><th className="r">PF</th>
+            {withR && <th className="r">{t.analytics.col.avgR}</th>}
+            <th className="r">{t.analytics.col.avgPnl}</th><th className="r">{t.analytics.col.total}</th><th style={{ width: '22%' }}></th>
           </tr>
         </thead>
         <tbody>

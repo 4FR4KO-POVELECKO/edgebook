@@ -213,3 +213,6 @@ table.plain tbody tr { cursor: default; }
   .cal-cell .c { display: none; }
   .months { grid-template-columns: repeat(3, 1fr); }
 }
+
+.lang-switch { display: flex; margin-top: 14px; }
+.lang-switch button { flex: 1; justify-content: center; font-size: 12px; }

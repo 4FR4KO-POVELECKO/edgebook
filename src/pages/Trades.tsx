@@ -4,12 +4,14 @@ import { Empty } from '../components/ui'
 import { computeStats, netPnl, tradeDay } from '../lib/calc'
 import { num, pct, pnlClass, useMoney, ymd } from '../lib/format'
 import { csvToTrades, download, tradesToCsv } from '../lib/io'
+import { label, useT } from '../i18n'
 import { useStore } from '../store'
 
 export default function Trades() {
   const { trades, strategies, importTrades } = useStore()
   const show = useTradeModal((s) => s.show)
   const money = useMoney()
+  const t = useT()
   const fileRef = useRef<HTMLInputElement>(null)
   const [q, setQ] = useState('')
   const [strategy, setStrategy] = useState('')
@@ -42,51 +44,51 @@ export default function Trades() {
     const { trades: parsed, errors, newStrategies } = csvToTrades(text, strategies)
     if (newStrategies.length) useStore.setState((s) => ({ strategies: [...s.strategies, ...newStrategies] }))
     importTrades(parsed)
-    alert(`Импортировано сделок: ${parsed.length}${errors.length ? `\n\nОшибки:\n${errors.slice(0, 10).join('\n')}` : ''}`)
+    alert(`${t.trades.imported(parsed.length)}${errors.length ? `\n\n${t.trades.importErrors}\n${errors.slice(0, 10).join('\n')}` : ''}`)
     if (fileRef.current) fileRef.current.value = ''
   }
 
   return (
     <div className="stack">
       <div className="page-head">
-        <h1>Сделки</h1>
+        <h1>{t.trades.title}</h1>
         <div className="row">
-          <button onClick={() => fileRef.current?.click()}>Импорт CSV</button>
+          <button onClick={() => fileRef.current?.click()}>{t.trades.importCsv}</button>
           <input ref={fileRef} type="file" accept=".csv,text/csv" hidden onChange={(e) => onImport(e.target.files?.[0])} />
-          <button disabled={!filtered.length} onClick={() => download(`trades-${ymd(new Date())}.csv`, tradesToCsv(filtered, strategies), 'text/csv')}>Экспорт CSV</button>
-          <button className="primary" onClick={() => show()}>+ Сделка</button>
+          <button disabled={!filtered.length} onClick={() => download(`trades-${ymd(new Date())}.csv`, tradesToCsv(filtered, strategies), 'text/csv')}>{t.trades.exportCsv}</button>
+          <button className="primary" onClick={() => show()}>{t.nav.newTrade}</button>
         </div>
       </div>
 
       <div className="card">
         <div className="row">
-          <input style={{ width: 200 }} placeholder="Поиск: тикер или заметка" value={q} onChange={(e) => setQ(e.target.value)} />
+          <input style={{ width: 200 }} placeholder={t.trades.search} value={q} onChange={(e) => setQ(e.target.value)} />
           <select style={{ width: 170 }} value={strategy} onChange={(e) => setStrategy(e.target.value)}>
-            <option value="">Все стратегии</option>
-            <option value="-">Без стратегии</option>
+            <option value="">{t.common.allStrategies}</option>
+            <option value="-">{t.common.noStrategy}</option>
             {strategies.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
           <select style={{ width: 120 }} value={dir} onChange={(e) => setDir(e.target.value)}>
-            <option value="">Long + Short</option>
+            <option value="">{t.trades.bothSides}</option>
             <option value="long">Long</option>
             <option value="short">Short</option>
           </select>
           <select style={{ width: 130 }} value={result} onChange={(e) => setResult(e.target.value)}>
-            <option value="">Все результаты</option>
-            <option value="win">Прибыльные</option>
-            <option value="loss">Убыточные</option>
-            <option value="open">Открытые</option>
+            <option value="">{t.trades.allResults}</option>
+            <option value="win">{t.trades.winners}</option>
+            <option value="loss">{t.trades.losers}</option>
+            <option value="open">{t.trades.openOnly}</option>
           </select>
           <select style={{ width: 160 }} value={tag} onChange={(e) => setTag(e.target.value)}>
-            <option value="">Любой тег / ошибка</option>
-            {allTags.map((t) => <option key={t}>{t}</option>)}
+            <option value="">{t.trades.anyTag}</option>
+            {allTags.map((x) => <option key={x} value={x}>{label(t.mistakes, x)}</option>)}
           </select>
-          <input type="date" style={{ width: 150 }} value={from} onChange={(e) => setFrom(e.target.value)} title="С" />
-          <input type="date" style={{ width: 150 }} value={to} onChange={(e) => setTo(e.target.value)} title="По" />
-          {anyFilter && <button className="ghost" onClick={() => { setQ(''); setStrategy(''); setDir(''); setResult(''); setFrom(''); setTo(''); setTag('') }}>Сбросить</button>}
+          <input type="date" style={{ width: 150 }} value={from} onChange={(e) => setFrom(e.target.value)} title={t.trades.from} />
+          <input type="date" style={{ width: 150 }} value={to} onChange={(e) => setTo(e.target.value)} title={t.trades.to} />
+          {anyFilter && <button className="ghost" onClick={() => { setQ(''); setStrategy(''); setDir(''); setResult(''); setFrom(''); setTo(''); setTag('') }}>{t.common.reset}</button>}
         </div>
         <div className="row" style={{ marginTop: 12, gap: 20 }}>
-          <span className="muted">Найдено: <b style={{ color: 'var(--text)' }}>{filtered.length}</b></span>
+          <span className="muted">{t.trades.found}: <b style={{ color: 'var(--text)' }}>{filtered.length}</b></span>
           <span className="muted">P&L: <b className={`num ${pnlClass(st.net)}`}>{money(st.net, { sign: true })}</b></span>
           <span className="muted">Win rate: <b style={{ color: 'var(--text)' }}>{pct(st.winRate)}</b></span>
           <span className="muted">PF: <b style={{ color: 'var(--text)' }}>{num(st.profitFactor)}</b></span>
@@ -95,8 +97,8 @@ export default function Trades() {
 
       <div className="card" style={{ padding: 0 }}>
         {filtered.length ? <TradeTable trades={filtered} /> : (
-          <Empty title={trades.length ? 'Ничего не найдено' : 'Сделок пока нет'}>
-            {!trades.length && <p>Нажми «+ Сделка» или импортируй CSV. Формат колонок — в Настройках.</p>}
+          <Empty title={trades.length ? t.trades.notFound : t.trades.emptyTitle}>
+            {!trades.length && <p>{t.trades.emptyText}</p>}
           </Empty>
         )}
       </div>

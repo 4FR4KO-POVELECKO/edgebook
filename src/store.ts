@@ -1,6 +1,7 @@
 import { del, get, set } from 'idb-keyval'
 import { create } from 'zustand'
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware'
+import { ru } from './i18n/ru'
 import type { DayNote, Settings, Strategy, Trade } from './types'
 
 // IndexedDB instead of localStorage: screenshots easily blow past the 5 MB localStorage limit.
@@ -41,7 +42,30 @@ const initial: BackupData = {
   trades: [],
   strategies: [],
   dayNotes: {},
-  settings: { startingBalance: 10000, currency: '$', riskPercent: 1 },
+  settings: { lang: 'en', startingBalance: 10000, currency: '$', riskPercent: 1 },
+}
+
+// v1 stored built-in markets/emotions/mistakes as Russian labels; v2 stores language-neutral keys.
+const reverse = (m: Record<string, string>) => Object.fromEntries(Object.entries(m).map(([k, v]) => [v, k]))
+const ruMarket = reverse(ru.markets)
+const ruEmotion = reverse(ru.emotions)
+const ruMistake = reverse(ru.mistakes)
+
+function migrateLabels(d: BackupData): BackupData {
+  return {
+    ...d,
+    trades: d.trades.map((t) => ({
+      ...t,
+      market: ruMarket[t.market] ?? t.market,
+      emotion: t.emotion ? ruEmotion[t.emotion] ?? t.emotion : t.emotion,
+      mistakes: t.mistakes.map((m) => ruMistake[m] ?? m),
+    })),
+    strategies: d.strategies.map((s) => ({ ...s, market: ruMarket[s.market] ?? s.market })),
+  }
+}
+
+function normalize(d: BackupData): BackupData {
+  return migrateLabels({ ...initial, ...d, settings: { ...initial.settings, ...d.settings } })
 }
 
 export const useStore = create<State>()(
@@ -78,13 +102,19 @@ export const useStore = create<State>()(
       setDayNote: (n) => setState((s) => ({ dayNotes: { ...s.dayNotes, [n.date]: n } })),
       setSettings: (patch) => setState((s) => ({ settings: { ...s.settings, ...patch } })),
 
-      restore: (d) => setState({ ...initial, ...d, settings: { ...initial.settings, ...d.settings } }),
-      reset: () => setState(initial),
+      restore: (d) => setState(normalize(d)),
+      reset: () => setState((s) => ({ ...initial, settings: { ...initial.settings, lang: s.settings.lang } })),
     }),
     {
       name: 'trader-journal',
-      version: 1,
+      version: 2,
       storage: createJSONStorage(() => idbStorage),
+      migrate: (persisted) => normalize(persisted as BackupData),
+      // settings are merged key-by-key so newly added fields get their defaults
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<BackupData>
+        return { ...current, ...p, settings: { ...current.settings, ...p.settings } }
+      },
     },
   ),
 )

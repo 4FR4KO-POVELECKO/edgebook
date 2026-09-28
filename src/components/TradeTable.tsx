@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { create } from 'zustand'
 import { holdMinutes, isClosed, netPnl, rMultiple } from '../lib/calc'
+import { label, useT } from '../i18n'
 import { duration, fmtDateTime, pnlClass, price, rFmt, useMoney } from '../lib/format'
 import { useStore } from '../store'
 import type { Trade } from '../types'
@@ -30,15 +31,16 @@ export function TradeTable({ trades, compact, sortable = true }: { trades: Trade
   const strategies = useStore((s) => s.strategies)
   const show = useTradeModal((s) => s.show)
   const money = useMoney()
+  const t = useT()
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: 'date', dir: -1 })
   const sMap = new Map(strategies.map((s) => [s.id, s]))
 
-  const val = (t: Trade): string | number => {
+  const val = (x: Trade): string | number => {
     switch (sort.key) {
-      case 'symbol': return t.symbol
-      case 'pnl': return netPnl(t)
-      case 'r': return rMultiple(t) ?? -Infinity
-      default: return t.exitDate ?? t.entryDate
+      case 'symbol': return x.symbol
+      case 'pnl': return netPnl(x)
+      case 'r': return rMultiple(x) ?? -Infinity
+      default: return x.exitDate ?? x.entryDate
     }
   }
   const rows = [...trades].sort((a, b) => {
@@ -57,46 +59,46 @@ export function TradeTable({ trades, compact, sortable = true }: { trades: Trade
       <table>
         <thead>
           <tr>
-            {th('date', 'Дата')}
-            {th('symbol', 'Тикер')}
-            <th>Сторона</th>
-            {!compact && <th>Стратегия</th>}
-            {!compact && <th className="r">Вход</th>}
-            {!compact && <th className="r">Выход</th>}
-            {!compact && <th className="r">Объём</th>}
-            {!compact && <th>Время</th>}
+            {th('date', t.table.date)}
+            {th('symbol', t.table.symbol)}
+            <th>{t.table.side}</th>
+            {!compact && <th>{t.table.strategy}</th>}
+            {!compact && <th className="r">{t.table.entry}</th>}
+            {!compact && <th className="r">{t.table.exit}</th>}
+            {!compact && <th className="r">{t.table.qty}</th>}
+            {!compact && <th>{t.table.duration}</th>}
             {th('r', 'R', 'r')}
             {th('pnl', 'P&L', 'r')}
-            {!compact && <th>Теги</th>}
+            {!compact && <th>{t.table.tags}</th>}
           </tr>
         </thead>
         <tbody>
-          {rows.map((t) => {
-            const p = netPnl(t)
-            const st = t.strategyId ? sMap.get(t.strategyId) : undefined
+          {rows.map((tr) => {
+            const p = netPnl(tr)
+            const st = tr.strategyId ? sMap.get(tr.strategyId) : undefined
             return (
-              <tr key={t.id} onClick={() => show(t)}>
-                <td className="muted">{fmtDateTime(t.exitDate ?? t.entryDate)}</td>
-                <td><b>{t.symbol}</b></td>
+              <tr key={tr.id} onClick={() => show(tr)}>
+                <td className="muted">{fmtDateTime(tr.exitDate ?? tr.entryDate)}</td>
+                <td><b>{tr.symbol}</b></td>
                 <td>
-                  <span className={`badge ${t.direction}`}>{t.direction === 'long' ? 'LONG' : 'SHORT'}</span>{' '}
-                  {t.status === 'open' && <span className="badge open">OPEN</span>}
+                  <span className={`badge ${tr.direction}`}>{tr.direction === 'long' ? 'LONG' : 'SHORT'}</span>{' '}
+                  {tr.status === 'open' && <span className="badge open">OPEN</span>}
                 </td>
                 {!compact && (
                   <td>{st ? <span className="row" style={{ gap: 6, flexWrap: 'nowrap' }}><span className="dot" style={{ background: st.color }} />{st.name}</span> : <span className="muted">—</span>}</td>
                 )}
-                {!compact && <td className="r num">{price(t.entryPrice)}</td>}
-                {!compact && <td className="r num">{price(t.exitPrice)}</td>}
-                {!compact && <td className="r num">{price(t.quantity)}</td>}
-                {!compact && <td className="muted">{duration(holdMinutes(t))}</td>}
-                <td className={`r num ${pnlClass(rMultiple(t) ?? 0)}`}>{rFmt(rMultiple(t))}</td>
-                <td className={`r num ${pnlClass(p)}`}>{isClosed(t) ? money(p, { sign: true }) : '—'}</td>
+                {!compact && <td className="r num">{price(tr.entryPrice)}</td>}
+                {!compact && <td className="r num">{price(tr.exitPrice)}</td>}
+                {!compact && <td className="r num">{price(tr.quantity)}</td>}
+                {!compact && <td className="muted">{duration(holdMinutes(tr))}</td>}
+                <td className={`r num ${pnlClass(rMultiple(tr) ?? 0)}`}>{rFmt(rMultiple(tr))}</td>
+                <td className={`r num ${pnlClass(p)}`}>{isClosed(tr) ? money(p, { sign: true }) : '—'}</td>
                 {!compact && (
                   <td>
                     <div className="row" style={{ gap: 4, flexWrap: 'nowrap' }}>
-                      {t.mistakes.slice(0, 2).map((m) => <span key={m} className="tag bad">{m}</span>)}
-                      {t.tags.slice(0, 2).map((m) => <span key={m} className="tag">{m}</span>)}
-                      {t.screenshots.length > 0 && <span className="muted" title="Есть скриншоты">🖼</span>}
+                      {tr.mistakes.slice(0, 2).map((m) => <span key={m} className="tag bad">{label(t.mistakes, m)}</span>)}
+                      {tr.tags.slice(0, 2).map((m) => <span key={m} className="tag">{m}</span>)}
+                      {tr.screenshots.length > 0 && <span className="muted" title={t.table.hasScreenshots}>🖼</span>}
                     </div>
                   </td>
                 )}
