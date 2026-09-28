@@ -1,10 +1,12 @@
 import { useMemo, useState, type ClipboardEvent } from 'react'
+import { Add01Icon, ArrowDownRight01Icon, ArrowUpRight01Icon, Cancel01Icon, Delete02Icon } from '@hugeicons/core-free-icons'
 import { isClosed, netPnl, plannedRR, returnPct, riskAmount, rMultiple, sum } from '../lib/calc'
 import { label, useT } from '../i18n'
 import { localDateTime, num, pnlClass, rFmt, useMoney } from '../lib/format'
 import { compressImage } from '../lib/io'
 import { useStore } from '../store'
 import { DEFAULT_MISTAKES, EMOTIONS, MARKETS, type Direction, type Trade } from '../types'
+import { Icon } from './Icon'
 import { ChipPicker, Lightbox, Modal, Seg, Stars } from './ui'
 
 export type TradeDraft = {
@@ -136,7 +138,7 @@ export function TradeForm({ trade, defaults, onClose }: { trade?: Trade; default
     <Modal title={trade ? t.form.editTitle(trade.symbol) : t.form.newTitle} onClose={onClose}>
       <div onPaste={onPaste}>
         <div className="row" style={{ marginBottom: 14, justifyContent: 'space-between' }}>
-          <Seg value={d.direction} onChange={(v) => set('direction', v)} options={[{ value: 'long', label: '▲ Long', cls: 'long' }, { value: 'short', label: '▼ Short', cls: 'short' }]} />
+          <Seg value={d.direction} onChange={(v) => set('direction', v)} options={[{ value: 'long', label: <><Icon icon={ArrowUpRight01Icon} size={16} />Long</>, cls: 'long' }, { value: 'short', label: <><Icon icon={ArrowDownRight01Icon} size={16} />Short</>, cls: 'short' }]} />
           <Seg value={d.status} onChange={(v) => set('status', v)} options={[{ value: 'closed', label: t.form.closed }, { value: 'open', label: t.form.open }]} />
         </div>
 
@@ -221,11 +223,11 @@ export function TradeForm({ trade, defaults, onClose }: { trade?: Trade; default
               {d.screenshots.map((src, i) => (
                 <div className="shot" key={i}>
                   <img src={src} alt="" onClick={() => setLightbox(src)} />
-                  <button type="button" className="sm" onClick={() => set('screenshots', d.screenshots.filter((_, j) => j !== i))}>✕</button>
+                  <button type="button" className="sm" onClick={() => set('screenshots', d.screenshots.filter((_, j) => j !== i))}><Icon icon={Cancel01Icon} size={14} /></button>
                 </div>
               ))}
               <label className="shot shot-add">
-                {t.form.addFile}
+                <Icon icon={Add01Icon} size={16} />{t.form.addFile}
                 <input type="file" accept="image/*" multiple hidden onChange={(e) => onFiles(e.target.files)} />
               </label>
             </div>
@@ -235,7 +237,7 @@ export function TradeForm({ trade, defaults, onClose }: { trade?: Trade; default
         <div className="modal-foot">
           <div>
             {trade && (
-              <button type="button" className="danger" onClick={() => { if (confirm(t.form.confirmDelete)) { deleteTrade(trade.id); onClose() } }}>{t.common.delete}</button>
+              <button type="button" className="danger" onClick={() => { if (confirm(t.form.confirmDelete)) { deleteTrade(trade.id); onClose() } }}><Icon icon={Delete02Icon} size={16} />{t.common.delete}</button>
             )}
           </div>
           <div className="row">

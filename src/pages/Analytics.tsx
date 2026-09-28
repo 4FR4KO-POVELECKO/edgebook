@@ -1,5 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react'
+import { Alert02Icon, Analytics01Icon, ArrowDownRight01Icon, ArrowUpRight01Icon, CheckmarkCircle02Icon, FilterIcon } from '@hugeicons/core-free-icons'
 import { DrawdownChart, EquityChart, PnlBars } from '../components/charts'
+import { Icon } from '../components/Icon'
 import { Empty, Seg } from '../components/ui'
 import {
   computeStats, equityCurve, groupBy, holdMinutes, isClosed, netPnl, rMultiple, round2, sortByExit, sum, tradeDay, type Stats,
@@ -53,7 +55,7 @@ export default function Analytics() {
     return labels.map((name, i) => ({ name, value: rs.filter((r) => r >= edges[i] && r < edges[i + 1]).length, sign: i < 4 ? -1 : 1 }))
   }, [filtered])
 
-  if (!trades.some(isClosed)) return <div className="card"><Empty title={t.analytics.noClosed} /></div>
+  if (!trades.some(isClosed)) return <div className="card"><Empty title={t.analytics.noClosed} icon={Analytics01Icon} /></div>
 
   const sName = (id: string) => strategies.find((s) => s.id === id)?.name ?? t.common.noStrategy
   const sColor = (id: string) => strategies.find((s) => s.id === id)?.color
@@ -92,7 +94,7 @@ export default function Analytics() {
         </div>
       </div>
 
-      {filtered.length === 0 ? <div className="card"><Empty title={t.analytics.noMatch} /></div> : <>
+      {filtered.length === 0 ? <div className="card"><Empty title={t.analytics.noMatch} icon={FilterIcon} /></div> : <>
         <MetricsGrid st={st} t={t} />
 
         <div className="card">
@@ -119,7 +121,7 @@ export default function Analytics() {
           </div>
           <div className="card">
             <div className="card-head"><h2>{t.analytics.longShort}</h2></div>
-            <Breakdown rows={[...groupBy(filtered, (t) => t.direction)].map(([k, ts]) => ({ key: k, label: k === 'long' ? '▲ Long' : '▼ Short', trades: ts }))} />
+            <Breakdown rows={[...groupBy(filtered, (t) => t.direction)].map(([k, ts]) => ({ key: k, label: k === 'long' ? <span className="row pos" style={{ gap: 4 }}><Icon icon={ArrowUpRight01Icon} size={15} />Long</span> : <span className="row neg" style={{ gap: 4 }}><Icon icon={ArrowDownRight01Icon} size={15} />Short</span>, trades: ts }))} />
             <div className="section-title">{t.analytics.holdTime}</div>
             <Breakdown rows={[...groupBy(filtered, holdBucket)].sort(([a], [b]) => holdLabels.indexOf(a) - holdLabels.indexOf(b)).map(([k, ts]) => ({ key: k, label: k, trades: ts }))} sort={false} />
           </div>
@@ -146,8 +148,8 @@ export default function Analytics() {
             <div className="card-head"><h2>{t.analytics.discipline}</h2></div>
             {withChecklist.length ? (
               <Breakdown rows={[
-                { key: 'y', label: t.analytics.rulesFollowed, trades: followed },
-                { key: 'n', label: t.analytics.rulesBroken, trades: broken },
+                { key: 'y', label: <span className="row" style={{ gap: 6 }}><Icon icon={CheckmarkCircle02Icon} size={16} className="pos" />{t.analytics.rulesFollowed}</span>, trades: followed },
+                { key: 'n', label: <span className="row" style={{ gap: 6 }}><Icon icon={Alert02Icon} size={16} style={{ color: 'var(--warn)' }} />{t.analytics.rulesBroken}</span>, trades: broken },
               ].filter((r) => r.trades.length)} />
             ) : <div className="hint">{t.analytics.checklistHint}</div>}
             <div className="section-title">{t.analytics.byEmotion}</div>

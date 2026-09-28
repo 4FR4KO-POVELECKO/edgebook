@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import { Add01Icon, Archive01Icon, ArchiveArrowUpIcon, Delete02Icon, PencilEdit02Icon, Target02Icon } from '@hugeicons/core-free-icons'
 import { EquityChart } from '../components/charts'
+import { Icon } from '../components/Icon'
 import { Empty, Modal } from '../components/ui'
 import { computeStats, equityCurve, isClosed } from '../lib/calc'
 import { num, pct, pnlClass, rFmt, useMoney } from '../lib/format'
@@ -23,15 +25,15 @@ export default function Strategies() {
           {strategies.some((s) => s.archived) && (
             <label className="row small muted"><input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} />{t.strategies.showArchived}</label>
           )}
-          <button className="primary" onClick={() => setEditing('new')}>{t.strategies.add}</button>
+          <button className="primary" onClick={() => setEditing('new')}><Icon icon={Add01Icon} />{t.strategies.add}</button>
         </div>
       </div>
 
       {list.length === 0 && (
         <div className="card">
-          <Empty title={t.strategies.emptyTitle}>
+          <Empty title={t.strategies.emptyTitle} icon={Target02Icon}>
             <p>{t.strategies.emptyText}</p>
-            <button className="primary" style={{ marginTop: 10 }} onClick={() => setEditing('new')}>{t.strategies.create}</button>
+            <button className="primary" style={{ marginTop: 10 }} onClick={() => setEditing('new')}><Icon icon={Add01Icon} />{t.strategies.create}</button>
           </Empty>
         </div>
       )}
@@ -50,7 +52,7 @@ export default function Strategies() {
                   <h2>{s.name} {s.archived && <span className="tag">{t.strategies.archived}</span>}</h2>
                   <div className="hint">{[s.market && label(t.markets, s.market), s.timeframe].filter(Boolean).join(' · ')}</div>
                 </div>
-                <button className="sm" onClick={() => setEditing(s)}>{t.common.edit}</button>
+                <button className="sm" onClick={() => setEditing(s)}><Icon icon={PencilEdit02Icon} size={14} />{t.common.edit}</button>
               </div>
               {s.description && <p className="muted" style={{ marginTop: 0 }}>{s.description}</p>}
 
@@ -138,10 +140,10 @@ function StrategyForm({ strategy, onClose }: { strategy?: Strategy; onClose: () 
         <div className="row">
           {strategy && (
             <>
-              <button onClick={() => { updateStrategy(strategy.id, { archived: !strategy.archived }); onClose() }}>{strategy.archived ? t.strategies.unarchive : t.strategies.archive}</button>
+              <button onClick={() => { updateStrategy(strategy.id, { archived: !strategy.archived }); onClose() }}><Icon icon={strategy.archived ? ArchiveArrowUpIcon : Archive01Icon} size={16} />{strategy.archived ? t.strategies.unarchive : t.strategies.archive}</button>
               <button className="danger" onClick={() => {
                 if (confirm(used ? t.strategies.confirmDeleteUsed(used) : t.strategies.confirmDelete)) { deleteStrategy(strategy.id); onClose() }
-              }}>{t.common.delete}</button>
+              }}><Icon icon={Delete02Icon} size={16} />{t.common.delete}</button>
             </>
           )}
         </div>

@@ -45,14 +45,12 @@ h3 { font-size: 14px; }
   padding: 20px 12px; display: flex; flex-direction: column; gap: 4px;
 }
 .brand { font-weight: 700; font-size: 16px; padding: 0 10px 18px; display: flex; gap: 8px; align-items: center; }
-.brand-dot { width: 10px; height: 10px; border-radius: 3px; background: linear-gradient(135deg, var(--pos), var(--accent)); }
 .nav-link {
   display: flex; align-items: center; gap: 10px;
   padding: 9px 10px; border-radius: 8px; color: var(--muted); font-weight: 500;
 }
 .nav-link:hover { background: var(--panel-2); color: var(--text); }
 .nav-link.active { background: var(--panel-2); color: var(--text); box-shadow: inset 2px 0 0 var(--accent); }
-.nav-icon { width: 18px; text-align: center; }
 .sidebar-foot { margin-top: auto; padding: 10px; }
 
 .main { padding: 24px 28px 60px; min-width: 0; }
@@ -216,3 +214,20 @@ table.plain tbody tr { cursor: default; }
 
 .lang-switch { display: flex; margin-top: 14px; }
 .lang-switch button { flex: 1; justify-content: center; font-size: 12px; }
+
+/* ---------- icons ---------- */
+.brand-logo {
+  width: 28px; height: 28px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center;
+  color: white; background: linear-gradient(135deg, var(--pos), var(--accent));
+}
+.nav-link svg { flex: none; }
+.btn { text-decoration: none; }
+a.more { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; }
+.icon-btn { padding: 7px; }
+.badge { display: inline-flex; align-items: center; gap: 3px; }
+.seg button { display: inline-flex; align-items: center; gap: 5px; }
+.shot-add { gap: 4px; }
+.empty-icon {
+  width: 56px; height: 56px; border-radius: 14px; margin: 0 auto 14px; display: flex; align-items: center; justify-content: center;
+  background: var(--panel-2); color: var(--accent);
+}

@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import { ArrowDownRight01Icon, ArrowUpRight01Icon, Image01Icon } from '@hugeicons/core-free-icons'
 import { create } from 'zustand'
 import { holdMinutes, isClosed, netPnl, rMultiple } from '../lib/calc'
 import { label, useT } from '../i18n'
 import { duration, fmtDateTime, pnlClass, price, rFmt, useMoney } from '../lib/format'
 import { useStore } from '../store'
 import type { Trade } from '../types'
+import { Icon } from './Icon'
 import { TradeForm, type TradeDraft } from './TradeForm'
 
 /** Global trade editor, so any page can open it. */
@@ -81,7 +83,7 @@ export function TradeTable({ trades, compact, sortable = true }: { trades: Trade
                 <td className="muted">{fmtDateTime(tr.exitDate ?? tr.entryDate)}</td>
                 <td><b>{tr.symbol}</b></td>
                 <td>
-                  <span className={`badge ${tr.direction}`}>{tr.direction === 'long' ? 'LONG' : 'SHORT'}</span>{' '}
+                  <span className={`badge ${tr.direction}`}><Icon icon={tr.direction === 'long' ? ArrowUpRight01Icon : ArrowDownRight01Icon} size={12} strokeWidth={2.2} />{tr.direction === 'long' ? 'LONG' : 'SHORT'}</span>{' '}
                   {tr.status === 'open' && <span className="badge open">OPEN</span>}
                 </td>
                 {!compact && (
@@ -98,7 +100,7 @@ export function TradeTable({ trades, compact, sortable = true }: { trades: Trade
                     <div className="row" style={{ gap: 4, flexWrap: 'nowrap' }}>
                       {tr.mistakes.slice(0, 2).map((m) => <span key={m} className="tag bad">{label(t.mistakes, m)}</span>)}
                       {tr.tags.slice(0, 2).map((m) => <span key={m} className="tag">{m}</span>)}
-                      {tr.screenshots.length > 0 && <span className="muted" title={t.table.hasScreenshots}>🖼</span>}
+                      {tr.screenshots.length > 0 && <span className="muted row" title={t.table.hasScreenshots}><Icon icon={Image01Icon} size={15} /></span>}
                     </div>
                   </td>
                 )}

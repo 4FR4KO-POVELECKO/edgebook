@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react'
 import { HashRouter, NavLink, Route, Routes } from 'react-router-dom'
+import {
+  Add01Icon, Analytics01Icon, Calendar03Icon, ChartCandlestickIcon, DashboardSquare01Icon, LeftToRightListBulletIcon, Settings02Icon, Target02Icon,
+} from '@hugeicons/core-free-icons'
+import { Icon } from './components/Icon'
 import { TradeModalHost, useTradeModal } from './components/TradeTable'
 import Analytics from './pages/Analytics'
 import CalendarPage from './pages/Calendar'
@@ -11,12 +15,12 @@ import { LANGS, useT } from './i18n'
 import { useStore } from './store'
 
 const NAV = [
-  { to: '/', icon: '◧', key: 'dashboard' },
-  { to: '/trades', icon: '☰', key: 'trades' },
-  { to: '/calendar', icon: '▦', key: 'calendar' },
-  { to: '/analytics', icon: '◔', key: 'analytics' },
-  { to: '/strategies', icon: '◈', key: 'strategies' },
-  { to: '/settings', icon: '⚙', key: 'settings' },
+  { to: '/', icon: DashboardSquare01Icon, key: 'dashboard' },
+  { to: '/trades', icon: LeftToRightListBulletIcon, key: 'trades' },
+  { to: '/calendar', icon: Calendar03Icon, key: 'calendar' },
+  { to: '/analytics', icon: Analytics01Icon, key: 'analytics' },
+  { to: '/strategies', icon: Target02Icon, key: 'strategies' },
+  { to: '/settings', icon: Settings02Icon, key: 'settings' },
 ] as const
 
 function useHydrated() {
@@ -56,14 +60,14 @@ export default function App() {
     <HashRouter>
       <div className="app">
         <aside className="sidebar">
-          <div className="brand"><span className="brand-dot" />{t.appName}</div>
+          <div className="brand"><span className="brand-logo"><Icon icon={ChartCandlestickIcon} size={18} /></span>{t.appName}</div>
           {NAV.map((n) => (
             <NavLink key={n.to} to={n.to} end className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-              <span className="nav-icon">{n.icon}</span>{t.nav[n.key]}
+              <Icon icon={n.icon} />{t.nav[n.key]}
             </NavLink>
           ))}
           <div className="sidebar-foot">
-            <button className="primary" style={{ width: '100%', justifyContent: 'center' }} onClick={() => show()}>{t.nav.newTrade}</button>
+            <button className="primary" style={{ width: '100%', justifyContent: 'center' }} onClick={() => show()}><Icon icon={Add01Icon} />{t.nav.newTrade}</button>
             <div className="hint" style={{ textAlign: 'center', marginTop: 6 }}>{t.nav.hotkey}</div>
             <div className="seg lang-switch">
               {LANGS.map((l) => (

@@ -1,6 +1,9 @@
+import type { HugeiconsIconProps } from '@hugeicons/react'
 import { useEffect, useState, type ReactNode } from 'react'
+import { Cancel01Icon } from '@hugeicons/core-free-icons'
 import { useT } from '../i18n'
 import { pnlClass } from '../lib/format'
+import { Icon } from './Icon'
 
 export function Modal({ title, onClose, children, narrow }: { title: ReactNode; onClose: () => void; children: ReactNode; narrow?: boolean }) {
   const t = useT()
@@ -14,7 +17,7 @@ export function Modal({ title, onClose, children, narrow }: { title: ReactNode; 
       <div className={`modal ${narrow ? 'narrow' : ''}`}>
         <div className="modal-head">
           <h2>{title}</h2>
-          <button className="ghost" onClick={onClose} aria-label={t.common.close}>✕</button>
+          <button className="ghost" onClick={onClose} aria-label={t.common.close}><Icon icon={Cancel01Icon} /></button>
         </div>
         {children}
       </div>
@@ -32,7 +35,7 @@ export function Kpi({ label, value, sub, tone }: { label: string; value: ReactNo
   )
 }
 
-export function Seg<T extends string>({ value, options, onChange }: { value: T; options: { value: T; label: string; cls?: string }[]; onChange: (v: T) => void }) {
+export function Seg<T extends string>({ value, options, onChange }: { value: T; options: { value: T; label: ReactNode; cls?: string }[]; onChange: (v: T) => void }) {
   return (
     <div className="seg">
       {options.map((o) => (
@@ -85,9 +88,10 @@ export function ChipPicker({ options, value, onChange, bad, allowAdd, format = (
   )
 }
 
-export function Empty({ title, children }: { title: string; children?: ReactNode }) {
+export function Empty({ title, icon, children }: { title: string; icon?: HugeiconsIconProps['icon']; children?: ReactNode }) {
   return (
     <div className="empty">
+      {icon && <div className="empty-icon"><Icon icon={icon} size={28} /></div>}
       <h2>{title}</h2>
       {children}
     </div>

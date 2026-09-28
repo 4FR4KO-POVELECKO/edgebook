@@ -1,4 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
+import { Add01Icon, FileExportIcon, FileImportIcon, LeftToRightListBulletIcon, Search01Icon } from '@hugeicons/core-free-icons'
+import { Icon } from '../components/Icon'
 import { TradeTable, useTradeModal } from '../components/TradeTable'
 import { Empty } from '../components/ui'
 import { computeStats, netPnl, tradeDay } from '../lib/calc'
@@ -53,10 +55,10 @@ export default function Trades() {
       <div className="page-head">
         <h1>{t.trades.title}</h1>
         <div className="row">
-          <button onClick={() => fileRef.current?.click()}>{t.trades.importCsv}</button>
+          <button onClick={() => fileRef.current?.click()}><Icon icon={FileImportIcon} />{t.trades.importCsv}</button>
           <input ref={fileRef} type="file" accept=".csv,text/csv" hidden onChange={(e) => onImport(e.target.files?.[0])} />
-          <button disabled={!filtered.length} onClick={() => download(`trades-${ymd(new Date())}.csv`, tradesToCsv(filtered, strategies), 'text/csv')}>{t.trades.exportCsv}</button>
-          <button className="primary" onClick={() => show()}>{t.nav.newTrade}</button>
+          <button disabled={!filtered.length} onClick={() => download(`trades-${ymd(new Date())}.csv`, tradesToCsv(filtered, strategies), 'text/csv')}><Icon icon={FileExportIcon} />{t.trades.exportCsv}</button>
+          <button className="primary" onClick={() => show()}><Icon icon={Add01Icon} />{t.nav.newTrade}</button>
         </div>
       </div>
 
@@ -97,7 +99,7 @@ export default function Trades() {
 
       <div className="card" style={{ padding: 0 }}>
         {filtered.length ? <TradeTable trades={filtered} /> : (
-          <Empty title={trades.length ? t.trades.notFound : t.trades.emptyTitle}>
+          <Empty title={trades.length ? t.trades.notFound : t.trades.emptyTitle} icon={trades.length ? Search01Icon : LeftToRightListBulletIcon}>
             {!trades.length && <p>{t.trades.emptyText}</p>}
           </Empty>
         )}

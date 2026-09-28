@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+import { Add01Icon, ArrowLeft01Icon, ArrowRight01Icon } from '@hugeicons/core-free-icons'
+import { Icon } from '../components/Icon'
 import { TradeTable, useTradeModal } from '../components/TradeTable'
 import { Stars } from '../components/ui'
 import { computeStats, groupBy, isClosed, netPnl, sum, tradeDay } from '../lib/calc'
@@ -53,9 +55,9 @@ export default function CalendarPage() {
       <div className="page-head">
         <h1>{t.calendar.title}</h1>
         <div className="row">
-          <button onClick={() => move(-1)}>←</button>
+          <button className="icon-btn" onClick={() => move(-1)} aria-label="←"><Icon icon={ArrowLeft01Icon} /></button>
           <h2 style={{ minWidth: 150, textAlign: 'center' }}>{t.months[month]} {year}</h2>
-          <button onClick={() => move(1)}>→</button>
+          <button className="icon-btn" onClick={() => move(1)} aria-label="→"><Icon icon={ArrowRight01Icon} /></button>
           <button className="ghost" onClick={() => { const d = new Date(); setCursor(new Date(d.getFullYear(), d.getMonth(), 1)); setSelected(today) }}>{t.calendar.today}</button>
         </div>
       </div>
@@ -147,7 +149,7 @@ function DayPanel({ date }: { date: string }) {
           <h2 style={{ textTransform: 'capitalize' }}>{label}</h2>
           <div className="row">
             {ts.length > 0 && <span className={`num ${pnlClass(pnl)}`}>{money(pnl, { sign: true })}</span>}
-            <button className="sm" onClick={() => show(undefined, { entryDate: `${date}T10:00`, exitDate: `${date}T11:00` })}>{t.nav.newTrade}</button>
+            <button className="sm" onClick={() => show(undefined, { entryDate: `${date}T10:00`, exitDate: `${date}T11:00` })}><Icon icon={Add01Icon} size={14} />{t.nav.newTrade}</button>
           </div>
         </div>
         {ts.length ? <TradeTable trades={ts} compact sortable={false} /> : <div className="hint">{t.calendar.noTradesDay}</div>}

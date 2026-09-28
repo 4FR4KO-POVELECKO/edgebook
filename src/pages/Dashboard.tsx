@@ -1,6 +1,8 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
+import { Add01Icon, ArrowRight02Icon, Note01Icon, Notebook01Icon, SparklesIcon } from '@hugeicons/core-free-icons'
 import { EquityChart } from '../components/charts'
+import { Icon } from '../components/Icon'
 import { TradeTable, useTradeModal } from '../components/TradeTable'
 import { Empty, Kpi } from '../components/ui'
 import { computeStats, equityCurve, groupBy, isClosed, netPnl, sortByExit, sum, tradeDay } from '../lib/calc'
@@ -43,11 +45,11 @@ export default function Dashboard() {
   if (trades.length === 0) {
     return (
       <div className="card">
-        <Empty title={t.dashboard.emptyTitle}>
+        <Empty title={t.dashboard.emptyTitle} icon={Notebook01Icon}>
           <p>{t.dashboard.emptyText}</p>
           <div className="row" style={{ justifyContent: 'center', marginTop: 16 }}>
-            <button className="primary" onClick={() => show()}>{t.dashboard.addTrade}</button>
-            <button onClick={() => restore({ ...makeDemo(), settings })}>{t.dashboard.loadDemo}</button>
+            <button className="primary" onClick={() => show()}><Icon icon={Add01Icon} />{t.dashboard.addTrade}</button>
+            <button onClick={() => restore({ ...makeDemo(), settings })}><Icon icon={SparklesIcon} />{t.dashboard.loadDemo}</button>
           </div>
         </Empty>
       </div>
@@ -61,8 +63,8 @@ export default function Dashboard() {
       <div className="page-head">
         <h1>{t.dashboard.title}</h1>
         <div className="row">
-          {!hasTodayNote && <Link to="/calendar" className="btn">{t.dashboard.todayPlan}</Link>}
-          <button className="primary" onClick={() => show()}>{t.nav.newTrade}</button>
+          {!hasTodayNote && <Link to="/calendar" className="btn"><Icon icon={Note01Icon} />{t.dashboard.todayPlan}</Link>}
+          <button className="primary" onClick={() => show()}><Icon icon={Add01Icon} />{t.nav.newTrade}</button>
         </div>
       </div>
 
@@ -79,11 +81,11 @@ export default function Dashboard() {
 
       <div className="grid g3">
         <div className="card span2">
-          <div className="card-head"><h2>{t.dashboard.equity}</h2><Link to="/analytics" className="small">{t.dashboard.toAnalytics}</Link></div>
+          <div className="card-head"><h2>{t.dashboard.equity}</h2><Link to="/analytics" className="more">{t.dashboard.toAnalytics}<Icon icon={ArrowRight02Icon} size={14} /></Link></div>
           <EquityChart data={curve} />
         </div>
         <div className="card">
-          <div className="card-head"><h2>{t.dashboard.strategies}</h2><Link to="/strategies" className="small">{t.dashboard.all}</Link></div>
+          <div className="card-head"><h2>{t.dashboard.strategies}</h2><Link to="/strategies" className="more">{t.dashboard.all}<Icon icon={ArrowRight02Icon} size={14} /></Link></div>
           {byStrategy.map(({ id, s, stats: st }) => (
             <div key={id} style={{ padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
               <div className="row" style={{ justifyContent: 'space-between' }}>
@@ -98,7 +100,7 @@ export default function Dashboard() {
 
       <div className="grid g3">
         <div className="card span2">
-          <div className="card-head"><h2>{t.dashboard.recent}</h2><Link to="/trades" className="small">{t.dashboard.allTrades}</Link></div>
+          <div className="card-head"><h2>{t.dashboard.recent}</h2><Link to="/trades" className="more">{t.dashboard.allTrades}<Icon icon={ArrowRight02Icon} size={14} /></Link></div>
           <TradeTable trades={sortByExit(closed).slice(-8)} compact sortable={false} />
         </div>
         <div className="card">
