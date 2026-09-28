@@ -22,6 +22,7 @@
   <img src="https://img.shields.io/badge/Vite-8-646cff?logo=vite&logoColor=white" alt="Vite">
   <img src="https://img.shields.io/badge/data-stays%20in%20your%20browser-22c3a6" alt="Local-first">
   <img src="https://img.shields.io/badge/i18n-EN%20%7C%20RU-8a94a3" alt="English and Russian">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license"></a>
 </p>
 
 <p align="center">
@@ -136,3 +137,7 @@ src/
 scripts/
   logo.py       generates the logo geometry
 ```
+
+## License
+
+[MIT](LICENSE) © 2026 Timur
