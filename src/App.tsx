@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { HashRouter, NavLink, Route, Routes } from 'react-router-dom'
+import { HashRouter, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import {
   Add01Icon, Analytics01Icon, Calendar03Icon, DashboardSquare01Icon, LeftToRightListBulletIcon, Settings02Icon, Target02Icon,
 } from '@hugeicons/core-free-icons'
@@ -23,6 +23,23 @@ const NAV = [
   { to: '/strategies', icon: Target02Icon, key: 'strategies' },
   { to: '/settings', icon: Settings02Icon, key: 'settings' },
 ] as const
+
+/** Keyed by path so the fade-in replays on every navigation. */
+function Pages() {
+  const { pathname } = useLocation()
+  return (
+    <div className="page" key={pathname}>
+      <Routes>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/trades" element={<Trades />} />
+        <Route path="/calendar" element={<CalendarPage />} />
+        <Route path="/analytics" element={<Analytics />} />
+        <Route path="/strategies" element={<Strategies />} />
+        <Route path="/settings" element={<SettingsPage />} />
+      </Routes>
+    </div>
+  )
+}
 
 function useHydrated() {
   const [ok, setOk] = useState(useStore.persist.hasHydrated())
@@ -78,14 +95,7 @@ export default function App() {
           </div>
         </aside>
         <main className="main">
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/trades" element={<Trades />} />
-            <Route path="/calendar" element={<CalendarPage />} />
-            <Route path="/analytics" element={<Analytics />} />
-            <Route path="/strategies" element={<Strategies />} />
-            <Route path="/settings" element={<SettingsPage />} />
-          </Routes>
+          <Pages />
         </main>
       </div>
       <TradeModalHost />

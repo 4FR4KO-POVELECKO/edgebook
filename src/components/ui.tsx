@@ -2,7 +2,6 @@ import type { HugeiconsIconProps } from '@hugeicons/react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { Cancel01Icon } from '@hugeicons/core-free-icons'
 import { useT } from '../i18n'
-import { pnlClass } from '../lib/format'
 import { Icon } from './Icon'
 
 export function Modal({ title, onClose, children, narrow }: { title: ReactNode; onClose: () => void; children: ReactNode; narrow?: boolean }) {
@@ -21,16 +20,6 @@ export function Modal({ title, onClose, children, narrow }: { title: ReactNode; 
         </div>
         {children}
       </div>
-    </div>
-  )
-}
-
-export function Kpi({ label, value, sub, tone }: { label: string; value: ReactNode; sub?: ReactNode; tone?: number }) {
-  return (
-    <div className="card kpi">
-      <div className="label">{label}</div>
-      <div className={`value ${tone != null ? pnlClass(tone) : ''}`}>{value}</div>
-      {sub != null && <div className="sub">{sub}</div>}
     </div>
   )
 }

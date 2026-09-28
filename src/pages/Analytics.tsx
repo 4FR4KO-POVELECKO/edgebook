@@ -131,7 +131,7 @@ export default function Analytics() {
           <div className="card-head"><h2>{t.analytics.byStrategy}</h2></div>
           <Breakdown rows={[...groupBy(filtered, (t) => t.strategyId ?? '')].map(([k, ts]) => ({
             key: k, trades: ts,
-            label: <span className="row" style={{ gap: 6 }}><span className="dot" style={{ background: sColor(k) ?? '#8a94a3' }} />{sName(k)}</span>,
+            label: <span className="row" style={{ gap: 6 }}><span className="dot" style={{ background: sColor(k) ?? 'var(--faint)' }} />{sName(k)}</span>,
           }))} withR />
         </div>
 

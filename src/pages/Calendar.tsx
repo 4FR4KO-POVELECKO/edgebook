@@ -7,12 +7,10 @@ import { computeStats, groupBy, isClosed, netPnl, sum, tradeDay } from '../lib/c
 import { pct, pnlClass, useMoney, ymd } from '../lib/format'
 import { useT } from '../i18n'
 import { useStore } from '../store'
-
-
 function cellBg(v: number, max: number) {
   if (!v || !max) return undefined
-  const a = 0.12 + 0.5 * Math.min(1, Math.abs(v) / max)
-  return v > 0 ? `rgba(34,195,166,${a})` : `rgba(240,97,109,${a})`
+  const share = Math.round(10 + 34 * Math.min(1, Math.abs(v) / max))
+  return `color-mix(in srgb, var(${v > 0 ? '--pos' : '--neg'}) ${share}%, var(--panel))`
 }
 
 export default function CalendarPage() {
