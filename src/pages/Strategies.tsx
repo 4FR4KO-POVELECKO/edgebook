@@ -67,7 +67,7 @@ export default function Strategies() {
                 <div><div className="hint">{t.strategies.discipline}</div><div className="num">{adherence == null ? '—' : pct(adherence, 0)}</div></div>
               </div>
 
-              {closed.length > 1 && <EquityChart data={equityCurve(closed, 0)} height={140} />}
+              {closed.length > 1 && <EquityChart data={equityCurve(closed, 0)} height={140} markers={false} />}
 
               {s.rules.length > 0 && (
                 <>

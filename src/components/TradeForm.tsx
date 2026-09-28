@@ -1,4 +1,4 @@
-import { useMemo, useState, type ClipboardEvent } from 'react'
+import { useMemo, useState, type ClipboardEvent, type KeyboardEvent } from 'react'
 import { Add01Icon, ArrowDownRight01Icon, ArrowUpRight01Icon, Cancel01Icon, Delete02Icon } from '@hugeicons/core-free-icons'
 import { isClosed, netPnl, plannedRR, returnPct, riskAmount, rMultiple, sum } from '../lib/calc'
 import { label, useT } from '../i18n'
@@ -7,7 +7,7 @@ import { compressImage } from '../lib/io'
 import { useStore } from '../store'
 import { DEFAULT_MISTAKES, EMOTIONS, MARKETS, type Direction, type Trade } from '../types'
 import { Icon } from './Icon'
-import { ChipPicker, Lightbox, Modal, Seg, Stars } from './ui'
+import { ChipPicker, Drawer, Lightbox, Seg, Stars, Tabs } from './ui'
 
 export type TradeDraft = {
   symbol: string
@@ -92,6 +92,7 @@ export function TradeForm({ trade, defaults, onClose }: { trade?: Trade; default
   const t = useT()
   const [d, setD] = useState<TradeDraft>(() => toDraft(trade, defaults))
   const [lightbox, setLightbox] = useState<string>()
+  const [tab, setTab] = useState<'trade' | 'review'>('trade')
   const set = <K extends keyof TradeDraft>(k: K, v: TradeDraft[K]) => setD((p) => ({ ...p, [k]: v }))
 
   const strategy = strategies.find((x) => x.id === d.strategyId)
@@ -134,119 +135,141 @@ export function TradeForm({ trade, defaults, onClose }: { trade?: Trade; default
     if (files.length) { e.preventDefault(); onFiles(files) }
   }
 
-  return (
-    <Modal title={trade ? t.form.editTitle(trade.symbol) : t.form.newTitle} onClose={onClose}>
-      <div onPaste={onPaste}>
-        <div className="row" style={{ marginBottom: 14, justifyContent: 'space-between' }}>
-          <Seg value={d.direction} onChange={(v) => set('direction', v)} options={[{ value: 'long', label: <><Icon icon={ArrowUpRight01Icon} size={16} />Long</>, cls: 'long' }, { value: 'short', label: <><Icon icon={ArrowDownRight01Icon} size={16} />Short</>, cls: 'short' }]} />
-          <Seg value={d.status} onChange={(v) => set('status', v)} options={[{ value: 'closed', label: t.form.closed }, { value: 'open', label: t.form.open }]} />
+  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); save() }
+  }
+
+  const rules = strategy?.rules ?? []
+  const ticked = rules.filter((rule) => d.checklist[rule]).length
+  const reviewBadge = [rules.length ? `${ticked}/${rules.length}` : '', d.mistakes.length ? `${d.mistakes.length}!` : ''].filter(Boolean).join(' · ') || undefined
+
+  const footer = (
+    <>
+      <div className="preview">
+        <div><div className="label">{t.form.netPnl}</div><div className={`value ${pnlClass(net)}`}>{closedPreview ? money(net, { sign: true }) : '—'}</div></div>
+        <div><div className="label">{t.form.rMultiple}</div><div className={`value ${pnlClass(r ?? 0)}`}>{rFmt(r)}</div></div>
+        <div><div className="label">{t.form.riskToStop}</div><div className="value">{risk ? money(risk) : '—'}</div></div>
+        <div><div className="label">{t.form.plannedRR}</div><div className="value">{rr ? `1:${num(rr, 1)}` : '—'} <span className={`small ${pnlClass(net)}`}>{closedPreview ? `${num(returnPct(preview), 2)}%` : ''}</span></div></div>
+      </div>
+      <div className="drawer-actions">
+        <div className="row">
+          {trade && (
+            <button type="button" className="danger" onClick={() => { if (confirm(t.form.confirmDelete)) { deleteTrade(trade.id); onClose() } }}><Icon icon={Delete02Icon} size={16} />{t.common.delete}</button>
+          )}
+          {!valid && tab === 'review' && <span className="hint">{t.form.requiredHint}</span>}
         </div>
-
-        <div className="form-grid">
-          <label className="field">
-            <span>{t.form.symbol}</span>
-            <input list="symbols" autoFocus value={d.symbol} onChange={(e) => set('symbol', e.target.value)} placeholder="AAPL" />
-            <datalist id="symbols">{knownSymbols.map((x) => <option key={x} value={x} />)}</datalist>
-          </label>
-          <label className="field">
-            <span>{t.form.market}</span>
-            <select value={d.market} onChange={(e) => set('market', e.target.value)}>{MARKETS.map((m) => <option key={m} value={m}>{label(t.markets, m)}</option>)}</select>
-          </label>
-          <label className="field half">
-            <span>{t.form.strategy}</span>
-            <select value={d.strategyId} onChange={(e) => setD((p) => ({ ...p, strategyId: e.target.value, checklist: {} }))}>
-              <option value="">{t.form.noStrategy}</option>
-              {activeStrategies.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
-            </select>
-          </label>
-
-          <label className="field half"><span>{t.form.entryTime}</span><input type="datetime-local" value={d.entryDate} onChange={(e) => set('entryDate', e.target.value)} /></label>
-          <label className="field half">
-            <span>{t.form.exitTime} {d.status === 'closed' && '*'}</span>
-            <input type="datetime-local" disabled={d.status === 'open'} value={d.exitDate} onChange={(e) => set('exitDate', e.target.value)} />
-          </label>
-
-          <label className="field"><span>{t.form.entryPrice}</span><input inputMode="decimal" value={d.entryPrice} onChange={(e) => set('entryPrice', e.target.value)} /></label>
-          <label className="field"><span>{t.form.exitPrice} {d.status === 'closed' && '*'}</span><input inputMode="decimal" disabled={d.status === 'open'} value={d.exitPrice} onChange={(e) => set('exitPrice', e.target.value)} /></label>
-          <label className="field"><span>{t.form.qty}</span><input inputMode="decimal" value={d.quantity} onChange={(e) => set('quantity', e.target.value)} /></label>
-          <label className="field"><span>{t.form.fees}</span><input inputMode="decimal" value={d.fees} onChange={(e) => set('fees', e.target.value)} /></label>
-
-          <label className="field"><span>{t.form.stopLoss}</span><input inputMode="decimal" value={d.stopLoss} onChange={(e) => set('stopLoss', e.target.value)} /></label>
-          <label className="field"><span>{t.form.takeProfit}</span><input inputMode="decimal" value={d.takeProfit} onChange={(e) => set('takeProfit', e.target.value)} /></label>
-          <label className="field"><span>{t.form.multiplier}</span><input inputMode="decimal" value={d.multiplier} onChange={(e) => set('multiplier', e.target.value)} /></label>
-          <div className="field" style={{ justifyContent: 'flex-end' }}>
-            {suggestedQty != null && (
-              <button type="button" className="sm" title={t.form.sizeByRiskTitle(settings.riskPercent, money(balance))}
-                onClick={() => set('quantity', String(preview.market === 'crypto' ? +suggestedQty.toFixed(4) : Math.floor(suggestedQty)))}>
-                {t.form.sizeByRisk(settings.riskPercent, num(suggestedQty, suggestedQty < 10 ? 3 : 0))}
-              </button>
-            )}
-          </div>
-        </div>
-
-        <div className="preview">
-          <div><div className="label">{t.form.netPnl}</div><div className={`value ${pnlClass(net)}`}>{closedPreview ? money(net, { sign: true }) : '—'}</div></div>
-          <div><div className="label">{t.form.rMultiple}</div><div className={`value ${pnlClass(r ?? 0)}`}>{rFmt(r)}</div></div>
-          <div><div className="label">{t.form.riskToStop}</div><div className="value">{risk ? money(risk) : '—'}</div></div>
-          <div><div className="label">{t.form.plannedRR}</div><div className="value">{rr ? `1:${num(rr, 1)}` : '—'} <span className={`small ${pnlClass(net)}`}>{closedPreview ? `${num(returnPct(preview), 2)}%` : ''}</span></div></div>
-        </div>
-
-        {strategy && strategy.rules.length > 0 && (
-          <>
-            <div className="section-title">{t.form.checklist(strategy.name)}</div>
-            {strategy.rules.map((rule) => (
-              <label key={rule} className="rule">
-                <input type="checkbox" checked={!!d.checklist[rule]} onChange={(e) => set('checklist', { ...d.checklist, [rule]: e.target.checked })} />
-                {rule}
-              </label>
-            ))}
-          </>
-        )}
-
-        <div className="section-title">{t.form.psychology}</div>
-        <div className="form-grid">
-          <label className="field half">
-            <span>{t.form.emotion}</span>
-            <select value={d.emotion} onChange={(e) => set('emotion', e.target.value)}>
-              <option value="">—</option>
-              {EMOTIONS.map((x) => <option key={x} value={x}>{label(t.emotions, x)}</option>)}
-              {d.emotion && !EMOTIONS.includes(d.emotion) && <option value={d.emotion}>{d.emotion}</option>}
-            </select>
-          </label>
-          <div className="field half"><span>{t.form.rating}</span><Stars value={d.rating} onChange={(v) => set('rating', v)} /></div>
-          <div className="field full"><span>{t.form.tags}</span><ChipPicker options={knownTags} value={d.tags} onChange={(v) => set('tags', v)} allowAdd /></div>
-          <div className="field full"><span>{t.form.mistakes}</span><ChipPicker options={knownMistakes} value={d.mistakes} onChange={(v) => set('mistakes', v)} format={(m) => label(t.mistakes, m)} bad allowAdd /></div>
-          <label className="field full"><span>{t.form.notes}</span><textarea value={d.notes} onChange={(e) => set('notes', e.target.value)} placeholder={t.form.notesPlaceholder} /></label>
-          <div className="field full">
-            <span>{t.form.screenshots}</span>
-            <div className="shots">
-              {d.screenshots.map((src, i) => (
-                <div className="shot" key={i}>
-                  <img src={src} alt="" onClick={() => setLightbox(src)} />
-                  <button type="button" className="sm" onClick={() => set('screenshots', d.screenshots.filter((_, j) => j !== i))}><Icon icon={Cancel01Icon} size={14} /></button>
-                </div>
-              ))}
-              <label className="shot shot-add">
-                <Icon icon={Add01Icon} size={16} />{t.form.addFile}
-                <input type="file" accept="image/*" multiple hidden onChange={(e) => onFiles(e.target.files)} />
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <div className="modal-foot">
-          <div>
-            {trade && (
-              <button type="button" className="danger" onClick={() => { if (confirm(t.form.confirmDelete)) { deleteTrade(trade.id); onClose() } }}><Icon icon={Delete02Icon} size={16} />{t.common.delete}</button>
-            )}
-          </div>
-          <div className="row">
-            <button type="button" onClick={onClose}>{t.common.cancel}</button>
-            <button type="button" className="primary" disabled={!valid} onClick={save}>{trade ? t.common.save : t.form.add}</button>
-          </div>
+        <div className="row">
+          <button type="button" onClick={onClose}>{t.common.cancel}</button>
+          <button type="button" className="primary" disabled={!valid} onClick={save} title={t.form.saveShortcut}>{trade ? t.common.save : t.form.add}</button>
         </div>
       </div>
+    </>
+  )
+
+  return (
+    <Drawer
+      title={trade ? t.form.editTitle(trade.symbol) : t.form.newTitle}
+      onClose={onClose}
+      header={<Tabs value={tab} onChange={setTab} tabs={[{ value: 'trade', label: t.form.tabTrade }, { value: 'review', label: t.form.tabReview, badge: reviewBadge }]} />}
+      footer={footer}
+    >
+      <div onPaste={onPaste} onKeyDown={onKeyDown}>
+        {tab === 'trade' ? (
+          <>
+            <div className="row" style={{ marginBottom: 16, justifyContent: 'space-between' }}>
+              <Seg value={d.direction} onChange={(v) => set('direction', v)} options={[{ value: 'long', label: <><Icon icon={ArrowUpRight01Icon} size={16} />Long</>, cls: 'long' }, { value: 'short', label: <><Icon icon={ArrowDownRight01Icon} size={16} />Short</>, cls: 'short' }]} />
+              <Seg value={d.status} onChange={(v) => set('status', v)} options={[{ value: 'closed', label: t.form.closed }, { value: 'open', label: t.form.open }]} />
+            </div>
+
+            <div className="form-grid">
+              <label className="field half">
+                <span>{t.form.symbol}</span>
+                <input list="symbols" autoFocus value={d.symbol} onChange={(e) => set('symbol', e.target.value)} placeholder="AAPL" />
+                <datalist id="symbols">{knownSymbols.map((x) => <option key={x} value={x} />)}</datalist>
+              </label>
+              <label className="field half">
+                <span>{t.form.market}</span>
+                <select value={d.market} onChange={(e) => set('market', e.target.value)}>{MARKETS.map((m) => <option key={m} value={m}>{label(t.markets, m)}</option>)}</select>
+              </label>
+              <label className="field full">
+                <span>{t.form.strategy}</span>
+                <select value={d.strategyId} onChange={(e) => setD((p) => ({ ...p, strategyId: e.target.value, checklist: {} }))}>
+                  <option value="">{t.form.noStrategy}</option>
+                  {activeStrategies.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+                </select>
+              </label>
+
+              <label className="field half"><span>{t.form.entryTime}</span><input type="datetime-local" value={d.entryDate} onChange={(e) => set('entryDate', e.target.value)} /></label>
+              <label className="field half">
+                <span>{t.form.exitTime} {d.status === 'closed' && '*'}</span>
+                <input type="datetime-local" disabled={d.status === 'open'} value={d.exitDate} onChange={(e) => set('exitDate', e.target.value)} />
+              </label>
+
+              <label className="field half"><span>{t.form.entryPrice}</span><input inputMode="decimal" value={d.entryPrice} onChange={(e) => set('entryPrice', e.target.value)} /></label>
+              <label className="field half"><span>{t.form.exitPrice} {d.status === 'closed' && '*'}</span><input inputMode="decimal" disabled={d.status === 'open'} value={d.exitPrice} onChange={(e) => set('exitPrice', e.target.value)} /></label>
+              <label className="field half"><span>{t.form.stopLoss}</span><input inputMode="decimal" value={d.stopLoss} onChange={(e) => set('stopLoss', e.target.value)} /></label>
+              <label className="field half"><span>{t.form.takeProfit}</span><input inputMode="decimal" value={d.takeProfit} onChange={(e) => set('takeProfit', e.target.value)} /></label>
+              <label className="field half"><span>{t.form.qty}</span><input inputMode="decimal" value={d.quantity} onChange={(e) => set('quantity', e.target.value)} /></label>
+              <div className="field half" style={{ justifyContent: 'flex-end' }}>
+                {suggestedQty != null && (
+                  <button type="button" className="sm size-btn" title={t.form.sizeByRiskTitle(settings.riskPercent, money(balance))}
+                    onClick={() => set('quantity', String(preview.market === 'crypto' ? +suggestedQty.toFixed(4) : Math.floor(suggestedQty)))}>
+                    {t.form.sizeByRisk(settings.riskPercent, num(suggestedQty, suggestedQty < 10 ? 3 : 0))}
+                  </button>
+                )}
+              </div>
+              <label className="field half"><span>{t.form.fees}</span><input inputMode="decimal" value={d.fees} onChange={(e) => set('fees', e.target.value)} /></label>
+              <label className="field half"><span>{t.form.multiplier}</span><input inputMode="decimal" value={d.multiplier} onChange={(e) => set('multiplier', e.target.value)} /></label>
+            </div>
+          </>
+        ) : (
+          <>
+            {rules.length > 0 && strategy && (
+              <>
+                <div className="section-title" style={{ marginTop: 0 }}>{t.form.checklist(strategy.name)}</div>
+                {rules.map((rule) => (
+                  <label key={rule} className="rule">
+                    <input type="checkbox" checked={!!d.checklist[rule]} onChange={(e) => set('checklist', { ...d.checklist, [rule]: e.target.checked })} />
+                    {rule}
+                  </label>
+                ))}
+              </>
+            )}
+
+            <div className="section-title" style={rules.length ? undefined : { marginTop: 0 }}>{t.form.psychology}</div>
+            <div className="form-grid">
+              <label className="field half">
+                <span>{t.form.emotion}</span>
+                <select value={d.emotion} onChange={(e) => set('emotion', e.target.value)}>
+                  <option value="">—</option>
+                  {EMOTIONS.map((x) => <option key={x} value={x}>{label(t.emotions, x)}</option>)}
+                  {d.emotion && !EMOTIONS.includes(d.emotion) && <option value={d.emotion}>{d.emotion}</option>}
+                </select>
+              </label>
+              <div className="field half"><span>{t.form.rating}</span><Stars value={d.rating} onChange={(v) => set('rating', v)} /></div>
+              <div className="field full"><span>{t.form.tags}</span><ChipPicker options={knownTags} value={d.tags} onChange={(v) => set('tags', v)} allowAdd /></div>
+              <div className="field full"><span>{t.form.mistakes}</span><ChipPicker options={knownMistakes} value={d.mistakes} onChange={(v) => set('mistakes', v)} format={(m) => label(t.mistakes, m)} bad allowAdd /></div>
+              <label className="field full"><span>{t.form.notes}</span><textarea rows={4} value={d.notes} onChange={(e) => set('notes', e.target.value)} placeholder={t.form.notesPlaceholder} /></label>
+              <div className="field full">
+                <span>{t.form.screenshots}</span>
+                <div className="shots">
+                  {d.screenshots.map((src, i) => (
+                    <div className="shot" key={i}>
+                      <img src={src} alt="" onClick={() => setLightbox(src)} />
+                      <button type="button" className="sm" onClick={() => set('screenshots', d.screenshots.filter((_, j) => j !== i))}><Icon icon={Cancel01Icon} size={14} /></button>
+                    </div>
+                  ))}
+                  <label className="shot shot-add">
+                    <Icon icon={Add01Icon} size={16} />{t.form.addFile}
+                    <input type="file" accept="image/*" multiple hidden onChange={(e) => onFiles(e.target.files)} />
+                  </label>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
       {lightbox && <Lightbox src={lightbox} onClose={() => setLightbox(undefined)} />}
-    </Modal>
+    </Drawer>
   )
 }

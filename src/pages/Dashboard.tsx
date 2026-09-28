@@ -1,22 +1,29 @@
 import { useMemo, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { Add01Icon, ArrowRight02Icon, Note01Icon, Notebook01Icon, SparklesIcon } from '@hugeicons/core-free-icons'
+import { Add01Icon, ArrowRight02Icon, Calendar03Icon, Note01Icon, Notebook01Icon, SparklesIcon, Target02Icon } from '@hugeicons/core-free-icons'
+import { Logo } from '../components/Logo'
 import { EquityChart } from '../components/charts'
 import { Icon } from '../components/Icon'
 import { TradeTable, useTradeModal } from '../components/TradeTable'
-import { Empty } from '../components/ui'
-import { computeStats, equityCurve, groupBy, isClosed, netPnl, sortByExit, sum, tradeDay } from '../lib/calc'
+import { Sparkline, Delta } from '../components/Sparkline'
+import { comparePeriods, computeStats, equityCurve, groupBy, isClosed, netPnl, sortByExit, sum, tradeDay, weeklyStats, type Stats } from '../lib/calc'
 import { makeDemo } from '../lib/demo'
 import { fmtDateTime, num, pct, pnlClass, price, useMoney, ymd } from '../lib/format'
 import { useT } from '../i18n'
 import { useStore } from '../store'
 
-function Stat({ label, value, sub, tone }: { label: string; value: ReactNode; sub?: ReactNode; tone?: number }) {
+function Stat({ label, value, sub, tone, delta, spark }: {
+  label: string; value: ReactNode; sub?: ReactNode; tone?: number; delta?: ReactNode; spark?: ReactNode
+}) {
   return (
     <div className="stat">
       <div className="label">{label}</div>
-      <div className={`value ${tone != null ? pnlClass(tone) : ''}`}>{value}</div>
+      <div className="stat-value-row">
+        <span className={`value ${tone != null ? pnlClass(tone) : ''}`}>{value}</span>
+        {delta}
+      </div>
       {sub != null && <div className="sub">{sub}</div>}
+      {spark && <div className="stat-spark">{spark}</div>}
     </div>
   )
 }
@@ -33,6 +40,8 @@ export default function Dashboard() {
 
   const stats = useMemo(() => computeStats(trades, settings.startingBalance), [trades, settings.startingBalance])
   const curve = useMemo(() => equityCurve(trades, settings.startingBalance), [trades, settings.startingBalance])
+  const weeks = useMemo(() => weeklyStats(trades), [trades])
+  const { current: cur, previous: prev } = useMemo(() => comparePeriods(trades), [trades])
   const closed = trades.filter(isClosed)
   const open = trades.filter((t) => t.status === 'open')
 
@@ -57,16 +66,55 @@ export default function Dashboard() {
   })).sort((a, b) => b.stats.net - a.stats.net)
   const maxStrategyAbs = Math.max(1, ...byStrategy.map((b) => Math.abs(b.stats.net)))
 
+  // context for stat cards: weekly trend + last 30 days vs the 30 before
+  const finite = (v: number | undefined) => (v != null && Number.isFinite(v) ? v : undefined)
+  const greenPct = (s: Stats) => (s.tradingDays ? (s.greenDays / s.tradingDays) * 100 : undefined)
+  const series = (f: (s: Stats) => number | undefined) => weeks.map((w) => (w.count ? finite(f(w)) : undefined))
+  const delta = (f: (s: Stats) => number | undefined, fmt: (v: number) => string, higherIsBetter = true) => {
+    const a = cur.count ? finite(f(cur)) : undefined
+    const b = prev.count ? finite(f(prev)) : undefined
+    if (a == null || b == null) return undefined
+    const d = a - b
+    return <Delta value={d} text={fmt(Math.abs(d))} good={higherIsBetter ? d >= 0 : d <= 0} title={t.dashboard.vsPrev} />
+  }
+  const spark = (f: (s: Stats) => number | undefined) => <Sparkline values={series(f)} />
+
   if (trades.length === 0) {
+    const [s1, s2, s3] = t.dashboard.steps
     return (
-      <div className="card">
-        <Empty title={t.dashboard.emptyTitle} icon={Notebook01Icon}>
-          <p>{t.dashboard.emptyText}</p>
-          <div className="row" style={{ justifyContent: 'center', marginTop: 16 }}>
-            <button className="primary" onClick={() => show()}><Icon icon={Add01Icon} />{t.dashboard.addTrade}</button>
-            <button onClick={() => restore({ ...makeDemo(), settings })}><Icon icon={SparklesIcon} />{t.dashboard.loadDemo}</button>
+      <div className="onboarding">
+        <div className="onboarding-head">
+          <div className="onboarding-logo"><Logo size={40} /></div>
+          <h1>{t.dashboard.onboardingTitle}</h1>
+          <p className="muted">{t.dashboard.onboardingText}</p>
+        </div>
+        <div className="steps">
+          <div className="card step">
+            <span className="step-n">1</span>
+            <Icon icon={Target02Icon} size={22} className="step-icon" />
+            <h3>{s1.title}</h3>
+            <p>{s1.text}</p>
+            <Link to="/strategies" className="btn">{s1.cta}</Link>
           </div>
-        </Empty>
+          <div className="card step">
+            <span className="step-n">2</span>
+            <Icon icon={Notebook01Icon} size={22} className="step-icon" />
+            <h3>{s2.title}</h3>
+            <p>{s2.text}</p>
+            <button className="primary" onClick={() => show()}><Icon icon={Add01Icon} />{s2.cta}</button>
+          </div>
+          <div className="card step">
+            <span className="step-n">3</span>
+            <Icon icon={Calendar03Icon} size={22} className="step-icon" />
+            <h3>{s3.title}</h3>
+            <p>{s3.text}</p>
+            <Link to="/calendar" className="btn">{s3.cta}</Link>
+          </div>
+        </div>
+        <div className="onboarding-demo">
+          <span className="muted">{t.dashboard.orDemo}</span>
+          <button onClick={() => restore({ ...makeDemo(), settings })}><Icon icon={SparklesIcon} />{t.dashboard.loadDemo}</button>
+        </div>
       </div>
     )
   }
@@ -102,15 +150,21 @@ export default function Dashboard() {
         </div>
 
         <div className="card flush stat-grid">
-          <Stat label={t.dashboard.winRate} value={pct(stats.winRate)} sub={t.dashboard.winLoss(stats.wins, stats.losses, stats.count)} />
-          <Stat label={t.dashboard.profitFactor} value={num(stats.profitFactor)} sub={t.dashboard.payoff(num(stats.payoff))} />
+          <Stat label={t.dashboard.winRate} value={pct(stats.winRate)} sub={t.dashboard.winLoss(stats.wins, stats.losses, stats.count)}
+            delta={delta((s) => s.winRate, (v) => pct(v))} spark={spark((s) => s.winRate)} />
+          <Stat label={t.dashboard.profitFactor} value={num(stats.profitFactor)} sub={t.dashboard.payoff(num(stats.payoff))}
+            delta={delta((s) => s.profitFactor, (v) => num(v))} spark={spark((s) => s.profitFactor)} />
           <Stat label={t.dashboard.expectancy} value={money(stats.expectancy, { sign: true })} tone={stats.expectancy}
-            sub={stats.avgR != null ? t.dashboard.avgR(num(stats.avgR)) : t.dashboard.perTrade} />
-          <Stat label={t.dashboard.maxDrawdown} value={money(-stats.maxDrawdown)} tone={-stats.maxDrawdown} sub={pct(stats.maxDrawdownPct)} />
+            sub={stats.avgR != null ? t.dashboard.avgR(num(stats.avgR)) : t.dashboard.perTrade}
+            delta={delta((s) => s.expectancy, (v) => money(v))} spark={spark((s) => s.expectancy)} />
+          <Stat label={t.dashboard.maxDrawdown} value={money(-stats.maxDrawdown)} tone={-stats.maxDrawdown} sub={pct(stats.maxDrawdownPct)}
+            delta={delta((s) => s.maxDrawdown, (v) => money(v), false)} spark={<Sparkline values={series((s) => -s.maxDrawdown)} color="var(--neg)" />} />
           <Stat label={t.dashboard.streak} value={streak === 0 ? '—' : t.dashboard.streakValue(Math.abs(streak), streak > 0)} tone={streak}
-            sub={t.dashboard.streakRecord(stats.maxWinStreak, stats.maxLossStreak)} />
+            sub={t.dashboard.streakRecord(stats.maxWinStreak, stats.maxLossStreak)}
+            spark={<Sparkline values={sorted.slice(-20).map(netPnl)} bars />} />
           <Stat label={t.analytics.m.greenDays} value={pct(stats.tradingDays ? (stats.greenDays / stats.tradingDays) * 100 : 0, 0)}
-            sub={t.common.of(stats.greenDays, stats.tradingDays)} />
+            sub={t.common.of(stats.greenDays, stats.tradingDays)}
+            delta={delta(greenPct, (v) => pct(v, 0))} spark={spark(greenPct)} />
         </div>
       </div>
 

@@ -24,6 +24,48 @@ export function Modal({ title, onClose, children, narrow }: { title: ReactNode; 
   )
 }
 
+/** Side panel: fixed header and footer, scrollable body. */
+export function Drawer({ title, header, footer, onClose, children }: {
+  title: ReactNode; header?: ReactNode; footer?: ReactNode; onClose: () => void; children: ReactNode
+}) {
+  const t = useT()
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
+    window.addEventListener('keydown', onKey)
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = prev }
+  }, [onClose])
+  return (
+    <div className="overlay drawer-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <aside className="drawer" role="dialog" aria-modal="true">
+        <div className="drawer-head">
+          <div className="modal-head" style={{ marginBottom: header ? 14 : 0 }}>
+            <h2>{title}</h2>
+            <button className="ghost icon-btn" onClick={onClose} aria-label={t.common.close}><Icon icon={Cancel01Icon} /></button>
+          </div>
+          {header}
+        </div>
+        <div className="drawer-body">{children}</div>
+        {footer && <div className="drawer-foot">{footer}</div>}
+      </aside>
+    </div>
+  )
+}
+
+export function Tabs<T extends string>({ value, tabs, onChange }: { value: T; tabs: { value: T; label: ReactNode; badge?: ReactNode }[]; onChange: (v: T) => void }) {
+  return (
+    <div className="tabs" role="tablist">
+      {tabs.map((tab) => (
+        <button key={tab.value} type="button" role="tab" aria-selected={value === tab.value}
+          className={`tab ${value === tab.value ? 'on' : ''}`} onClick={() => onChange(tab.value)}>
+          {tab.label}{tab.badge != null && <span className="tab-badge">{tab.badge}</span>}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 export function Seg<T extends string>({ value, options, onChange }: { value: T; options: { value: T; label: ReactNode; cls?: string }[]; onChange: (v: T) => void }) {
   return (
     <div className="seg">

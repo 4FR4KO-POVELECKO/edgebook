@@ -1,4 +1,5 @@
 import type { Trade } from '../types'
+import { ymd } from './format'
 
 export const isClosed = (t: Trade) =>
   t.status === 'closed' && t.exitPrice != null && t.exitDate != null
@@ -171,6 +172,8 @@ export interface EquityPoint {
   equity: number
   pnl: number
   drawdown: number
+  symbol?: string
+  direction?: Trade['direction']
 }
 
 export function equityCurve(trades: Trade[], startingBalance: number): EquityPoint[] {
@@ -181,9 +184,38 @@ export function equityCurve(trades: Trade[], startingBalance: number): EquityPoi
     const p = netPnl(t)
     eq += p
     peak = Math.max(peak, eq)
-    pts.push({ i: idx + 1, date: tradeDay(t), equity: round2(eq), pnl: round2(p), drawdown: round2(eq - peak) })
+    pts.push({
+      i: idx + 1, date: tradeDay(t), equity: round2(eq), pnl: round2(p), drawdown: round2(eq - peak),
+      symbol: t.symbol, direction: t.direction,
+    })
   })
   return pts
+}
+
+/** Closed trades whose exit day falls in [from, to] ('YYYY-MM-DD', inclusive). */
+export const inRange = (trades: Trade[], from: string, to: string) =>
+  trades.filter((t) => isClosed(t) && tradeDay(t) >= from && tradeDay(t) <= to)
+
+/** Day range ending `endDaysAgo` days before `now`, `len` days long. */
+export function dayRange(len: number, endDaysAgo = 0, now = new Date()): [string, string] {
+  const end = new Date(now)
+  end.setDate(end.getDate() - endDaysAgo)
+  const start = new Date(end)
+  start.setDate(start.getDate() - len + 1)
+  return [ymd(start), ymd(end)]
+}
+
+/** Stats for the last `days` days and the `days` before that. */
+export function comparePeriods(trades: Trade[], days = 30, now = new Date()) {
+  return {
+    current: computeStats(inRange(trades, ...dayRange(days, 0, now))),
+    previous: computeStats(inRange(trades, ...dayRange(days, days, now))),
+  }
+}
+
+/** One stats object per week for the last `weeks` weeks, oldest first. */
+export function weeklyStats(trades: Trade[], weeks = 12, now = new Date()): Stats[] {
+  return Array.from({ length: weeks }, (_, i) => computeStats(inRange(trades, ...dayRange(7, (weeks - 1 - i) * 7, now))))
 }
 
 export const round2 = (x: number) => Math.round(x * 100) / 100

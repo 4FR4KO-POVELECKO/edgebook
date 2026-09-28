@@ -74,6 +74,8 @@ export const en = {
     trade: (i: number) => `Trade #${i}`,
     balance: 'Balance',
     drawdown: 'Drawdown',
+    best: 'Best trade',
+    worst: 'Worst trade',
   },
 
   table: {
@@ -126,13 +128,14 @@ export const en = {
     addChip: '+ add',
     confirmDelete: 'Delete this trade?',
     add: 'Add trade',
+    tabTrade: 'Trade',
+    tabReview: 'Review',
+    requiredHint: 'Fill in the required fields on the Trade tab',
+    saveShortcut: '⌘/Ctrl + Enter to save',
   },
 
   dashboard: {
     title: 'Dashboard',
-    emptyTitle: 'Your journal is empty',
-    emptyText: 'Add your first trade or load demo data to see how everything works.',
-    addTrade: 'Add trade',
     loadDemo: 'Load demo data',
     todayPlan: 'Today’s plan',
     balance: 'Balance',
@@ -158,6 +161,16 @@ export const en = {
     allTrades: 'All trades',
     openPositions: 'Open positions',
     noOpen: 'No open positions',
+    vsPrev: 'Last 30 days vs the 30 days before',
+    trend: 'Weekly, last 12 weeks',
+    onboardingTitle: 'Welcome to Edgebook',
+    onboardingText: 'Three steps to your first insights.',
+    steps: [
+      { title: 'Describe a strategy', text: 'Write down your setups and entry rules. They become a checklist on every trade.', cta: 'Create strategy' },
+      { title: 'Log a trade', text: 'Entry, exit, stop and size. P&L and R-multiple are calculated for you.', cta: 'Add trade' },
+      { title: 'Review your days', text: 'The calendar and analytics show what actually drives your results.', cta: 'Open calendar' },
+    ],
+    orDemo: 'Just looking around?',
   },
 
   trades: {
