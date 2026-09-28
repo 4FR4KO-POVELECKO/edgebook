@@ -70,18 +70,18 @@ export default function Trades() {
             <option value="-">{t.common.noStrategy}</option>
             {strategies.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
-          <select style={{ width: 120 }} value={dir} onChange={(e) => setDir(e.target.value)}>
+          <select style={{ width: 145 }} value={dir} onChange={(e) => setDir(e.target.value)}>
             <option value="">{t.trades.bothSides}</option>
             <option value="long">Long</option>
             <option value="short">Short</option>
           </select>
-          <select style={{ width: 130 }} value={result} onChange={(e) => setResult(e.target.value)}>
+          <select style={{ width: 150 }} value={result} onChange={(e) => setResult(e.target.value)}>
             <option value="">{t.trades.allResults}</option>
             <option value="win">{t.trades.winners}</option>
             <option value="loss">{t.trades.losers}</option>
             <option value="open">{t.trades.openOnly}</option>
           </select>
-          <select style={{ width: 160 }} value={tag} onChange={(e) => setTag(e.target.value)}>
+          <select style={{ width: 180 }} value={tag} onChange={(e) => setTag(e.target.value)}>
             <option value="">{t.trades.anyTag}</option>
             {allTags.map((x) => <option key={x} value={x}>{label(t.mistakes, x)}</option>)}
           </select>

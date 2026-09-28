@@ -87,7 +87,7 @@ export default function Analytics() {
             <option value="-">{t.common.noStrategy}</option>
             {strategies.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
-          <select style={{ width: 130 }} value={market} onChange={(e) => setMarket(e.target.value)}>
+          <select style={{ width: 150 }} value={market} onChange={(e) => setMarket(e.target.value)}>
             <option value="">{t.common.allMarkets}</option>
             {markets.map((m) => <option key={m} value={m}>{label(t.markets, m)}</option>)}
           </select>
