@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { HashRouter, Link, NavLink, Route, Routes, useLocation } from 'react-router-dom'
-import { Add01Icon, Moon02Icon, Search01Icon, Sun03Icon } from '@hugeicons/core-free-icons'
+import { Add01Icon, Calculator01Icon, Moon02Icon, Search01Icon, Sun03Icon } from '@hugeicons/core-free-icons'
 import { CommandPalette, usePalette } from './components/CommandPalette'
 import { Icon } from './components/Icon'
 import { Logo } from './components/Logo'
@@ -8,6 +8,7 @@ import { TradeModalHost, useTradeModal } from './components/TradeTable'
 import { useResolvedTheme } from './lib/theme'
 import { NAV, NAV_GROUPS } from './nav'
 import Analytics from './pages/Analytics'
+import CalculatorPage from './pages/Calculator'
 import CalendarPage from './pages/Calendar'
 import Dashboard from './pages/Dashboard'
 import SettingsPage from './pages/Settings'
@@ -30,6 +31,7 @@ function Pages() {
         <Route path="/trades" element={<Trades />} />
         <Route path="/trade/:id" element={<TradePage />} />
         <Route path="/calendar" element={<CalendarPage />} />
+        <Route path="/calculator" element={<CalculatorPage />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/strategies" element={<Strategies />} />
         <Route path="/settings" element={<SettingsPage />} />
@@ -65,7 +67,7 @@ function TabBar() {
   const active = useSectionActive()
   return (
     <nav className="tabbar">
-      {NAV.map((n) => (
+      {NAV.filter((n) => n.group !== 'tools').map((n) => (
         <NavLink key={n.to} to={n.to} end className={({ isActive }) => `tab-link ${active(n.to, isActive) ? 'active' : ''}`}>
           <span className="tab-icon"><Icon icon={n.icon} size={20} /></span>
           <span className="tab-label">{t.nav[n.key]}</span>
@@ -128,6 +130,7 @@ export default function App() {
           <Link to="/" className="brand"><Logo />{t.appName}</Link>
           <div className="row" style={{ gap: 6 }}>
             <button className="icon-btn" onClick={() => setPalette(true)} aria-label={t.nav.search}><Icon icon={Search01Icon} size={18} /></button>
+            <Link to="/calculator" className="btn icon-btn" aria-label={t.nav.calculator}><Icon icon={Calculator01Icon} size={18} /></Link>
             <button className="primary icon-btn" onClick={() => show()} aria-label={t.nav.newTrade}><Icon icon={Add01Icon} size={18} /></button>
           </div>
         </header>

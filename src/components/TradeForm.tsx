@@ -1,5 +1,5 @@
 import { useMemo, useState, type ClipboardEvent, type KeyboardEvent } from 'react'
-import { Add01Icon, ArrowDownRight01Icon, ArrowUpRight01Icon, Cancel01Icon, Delete02Icon } from '@hugeicons/core-free-icons'
+import { Add01Icon, ArrowDownRight01Icon, ArrowUpRight01Icon, Calculator01Icon, Cancel01Icon, Delete02Icon } from '@hugeicons/core-free-icons'
 import { isClosed, leverageOf, liquidationPrice, marginUsed, netPnl, plannedRR, returnPct, riskAmount, rMultiple, roePct, stopBeyondLiquidation, sum } from '../lib/calc'
 import { label, useT } from '../i18n'
 import { localDateTime, num, pnlClass, price, rFmt, useMoney } from '../lib/format'
@@ -7,7 +7,8 @@ import { compressImage } from '../lib/io'
 import { useStore } from '../store'
 import { DEFAULT_MISTAKES, EMOTIONS, MARKETS, type Direction, type Trade } from '../types'
 import { Icon } from './Icon'
-import { ChipPicker, Drawer, Lightbox, Seg, Stars, Tabs } from './ui'
+import { draftFromCalc, RiskCalculator } from './RiskCalculator'
+import { ChipPicker, Drawer, Lightbox, Modal, Seg, Stars, Tabs } from './ui'
 
 export type TradeDraft = {
   symbol: string
@@ -95,6 +96,7 @@ export function TradeForm({ trade, defaults, onClose }: { trade?: Trade; default
   const [d, setD] = useState<TradeDraft>(() => toDraft(trade, defaults))
   const [lightbox, setLightbox] = useState<string>()
   const [tab, setTab] = useState<'trade' | 'review'>('trade')
+  const [calcOpen, setCalcOpen] = useState(false)
   const set = <K extends keyof TradeDraft>(k: K, v: TradeDraft[K]) => setD((p) => ({ ...p, [k]: v }))
 
   const strategy = strategies.find((x) => x.id === d.strategyId)
@@ -222,12 +224,17 @@ export function TradeForm({ trade, defaults, onClose }: { trade?: Trade; default
               <label className="field half"><span>{t.form.takeProfit}</span><input inputMode="decimal" value={d.takeProfit} onChange={(e) => set('takeProfit', e.target.value)} /></label>
               <label className="field half"><span>{t.form.qty}</span><input inputMode="decimal" value={d.quantity} onChange={(e) => set('quantity', e.target.value)} /></label>
               <div className="field half" style={{ justifyContent: 'flex-end' }}>
-                {suggestedQty != null && (
-                  <button type="button" className="sm size-btn" title={t.form.sizeByRiskTitle(settings.riskPercent, money(balance))}
-                    onClick={() => set('quantity', String(preview.market === 'crypto' ? +suggestedQty.toFixed(4) : Math.floor(suggestedQty)))}>
-                    {t.form.sizeByRisk(settings.riskPercent, num(suggestedQty, suggestedQty < 10 ? 3 : 0))}
+                <div className="row" style={{ gap: 6, flexWrap: 'nowrap' }}>
+                  {suggestedQty != null && (
+                    <button type="button" className="sm size-btn" title={t.form.sizeByRiskTitle(settings.riskPercent, money(balance))}
+                      onClick={() => set('quantity', String(preview.market === 'crypto' ? +suggestedQty.toFixed(4) : Math.floor(suggestedQty)))}>
+                      {t.form.sizeByRisk(settings.riskPercent, num(suggestedQty, suggestedQty < 10 ? 3 : 0))}
+                    </button>
+                  )}
+                  <button type="button" className="sm calc-open" onClick={() => setCalcOpen(true)} title={t.calc.open}>
+                    <Icon icon={Calculator01Icon} size={15} />{suggestedQty == null && t.calc.open}
                   </button>
-                )}
+                </div>
               </div>
               <label className="field half"><span>{t.form.fees}</span><input inputMode="decimal" value={d.fees} onChange={(e) => set('fees', e.target.value)} /></label>
               <label className="field half"><span>{t.form.multiplier}</span><input inputMode="decimal" value={d.multiplier} onChange={(e) => set('multiplier', e.target.value)} /></label>
@@ -302,6 +309,22 @@ export function TradeForm({ trade, defaults, onClose }: { trade?: Trade; default
         )}
       </div>
       {lightbox && <Lightbox src={lightbox} onClose={() => setLightbox(undefined)} />}
+      {calcOpen && (
+        <Modal title={t.calc.title} onClose={() => setCalcOpen(false)}>
+          <RiskCalculator
+            initial={{
+              mode: d.stopLoss ? 'size' : 'stop', direction: d.direction, entry: d.entryPrice,
+              stop: d.stopLoss, leverage: d.leverage, mult: d.multiplier, qty: d.quantity,
+            }}
+            useLabel={t.calc.apply}
+            onUse={(r) => {
+              // keep a take profit the user already set; the calculator only suggests 2R
+              setD((p) => ({ ...p, ...draftFromCalc(r), takeProfit: p.takeProfit || String(r.takeProfit ?? '') }))
+              setCalcOpen(false)
+            }}
+          />
+        </Modal>
+      )}
     </Drawer>
   )
 }

@@ -30,7 +30,8 @@ export function Drawer({ title, header, footer, onClose, children }: {
 }) {
   const t = useT()
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
+    // a modal opened on top of the drawer (e.g. the calculator) handles Escape itself
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !document.querySelector('.modal')) onClose() }
     window.addEventListener('keydown', onKey)
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
